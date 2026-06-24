@@ -1,0 +1,17 @@
+{
+  "name": "offer-hub",
+  "version": "1.0.0",
+  "description": "Hub de mineração de ofertas com swipe e análise de IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0",
+    "express": "^4.19.0"
+  }
+}
