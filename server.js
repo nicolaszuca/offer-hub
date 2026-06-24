@@ -8,8 +8,9 @@ const PORT = process.env.PORT || 3000;
 const PASSWORD = process.env.HUB_PASSWORD || '';
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
 
-// DATABASE
+// ─── DATABASE ─────────────────────────────────────────────────────────────────
 const db = new Database(process.env.DB_PATH || 'hub.db');
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS queue (
     id TEXT PRIMARY KEY,
@@ -24,7 +25,7 @@ db.exec(`
   );
 `);
 
-// AUTH
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
 const AUTH_ENABLED = PASSWORD.length > 0;
 const getToken = () =>
   AUTH_ENABLED
@@ -39,18 +40,30 @@ function auth(req, res, next) {
   next();
 }
 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+// ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// AUTH ROUTE
+// ─── AUTH ROUTE ───────────────────────────────────────────────────────────────
 app.post('/api/auth', (req, res) => {
   if (!AUTH_ENABLED) return res.json({ token: 'no-auth' });
   const { password } = req.body || {};
-  if (!password || password !== PASSWORD) return res.status(401).json({ error: 'Senha incorreta' });
+  if (!password || password !== PASSWORD) {
+    return res.status(401).json({ error: 'Senha incorreta' });
+  }
   res.json({ token: getToken() });
 });
 
-// QUEUE
+// ─── QUEUE ────────────────────────────────────────────────────────────────────
 app.get('/api/queue', auth, (req, res) => {
   const rows = db.prepare('SELECT id, data FROM queue ORDER BY created_at ASC').all();
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id })));
@@ -79,7 +92,7 @@ app.delete('/api/queue', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// SAVED
+// ─── SAVED ────────────────────────────────────────────────────────────────────
 app.get('/api/saved', auth, (req, res) => {
   const rows = db.prepare('SELECT id, data, analysis FROM saved ORDER BY saved_at DESC').all();
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id, analysis: r.analysis })));
@@ -108,7 +121,7 @@ app.delete('/api/saved', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// ANÁLISE IA
+// ─── ANALYZE ──────────────────────────────────────────────────────────────────
 app.post('/api/analyze', auth, async (req, res) => {
   const { ad } = req.body || {};
   if (!ad) return res.status(400).json({ error: 'Ad não fornecido' });
@@ -117,14 +130,14 @@ app.post('/api/analyze', auth, async (req, res) => {
   const prompt = `Você é um especialista em marketing direto e copywriting. Analise este anúncio do Facebook com visão estratégica e objetiva.
 
 ANUNCIANTE: ${ad.advertiser || 'Desconhecido'}
+NICHO: ${ad.niche || 'não informado'}
 COPY PRINCIPAL:
 ${ad.copy || '(sem copy)'}
 
 TÍTULO DO LINK: ${ad.linkTitle || '(sem título)'}
 DESCRIÇÃO: ${ad.linkDesc || '(sem descrição)'}
-PLATAFORMAS: ${(ad.platforms || []).join(', ') || 'não informado'}
 
-Forneça a análise EXATAMENTE neste formato (máximo 2 linhas por seção):
+Forneça a análise EXATAMENTE neste formato:
 
 🎣 GANCHO: [como o ad prende atenção nos primeiros segundos]
 
@@ -141,19 +154,35 @@ Forneça a análise EXATAMENTE neste formato (máximo 2 linhas por seção):
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 900, messages: [{ role: 'user', content: prompt }] }),
+      headers: {
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 900,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
-    if (!response.ok) { const err = await response.text(); return res.status(502).json({ error: `Erro Claude API: ${response.status}`, detail: err }); }
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(502).json({ error: `Erro na API do Claude: ${response.status}`, detail: err });
+    }
+
     const data = await response.json();
-    res.json({ analysis: data.content?.[0]?.text || 'Análise não disponível' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const analysis = data.content?.[0]?.text || 'Análise não disponível';
+    res.json({ analysis });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// HEALTH
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.0.0' }));
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
 
+// ─── START ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`✅ Offer Hub rodando em http://localhost:${PORT}`);
-  if (!CLAUDE_KEY) console.warn('⚠️  ANTHROPIC_API_KEY não definido — análise IA desativada');
+  console.log(`Offer Hub rodando na porta ${PORT}`);
 });
