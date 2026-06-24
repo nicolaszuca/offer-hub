@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer Hub</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--sidebar:#12141a;--sidebar-hover:#1e2028;
+  --card:#fff;--border:#e4e6eb;--text:#1c1e21;--text2:#65676b;
+  --primary:#5865f2;--primary-hover:#4752d8;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --shadow:0 1px 4px rgba(0,0,0,.1);--radius:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--sidebar);display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#1e2028;border-radius:16px;padding:40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo{font-size:28px;font-weight:800;color:#fff;margin-bottom:6px}
+.login-logo span{color:var(--primary)}
+.login-sub{color:#9ca3af;font-size:13px;margin-bottom:28px}
+.login-label{display:block;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.login-input{width:100%;padding:10px 14px;background:#12141a;border:1.5px solid #2d3148;border-radius:8px;color:#fff;font-size:14px;outline:none;transition:border-color .2s}
+.login-input:focus{border-color:var(--primary)}
+.login-btn{width:100%;margin-top:20px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.login-btn:hover{background:var(--primary-hover)}
+.login-err{color:#f87171;font-size:13px;margin-top:10px;text-align:center;min-height:18px}
+
+/* APP SHELL */
+#app{display:none;flex:1;overflow:hidden;flex-direction:row}
+#app.visible{display:flex}
+
+/* SIDEBAR */
+.sidebar{width:210px;min-width:210px;background:var(--sidebar);display:flex;flex-direction:column;padding:16px 10px;overflow-y:auto}
+.sidebar-logo{font-size:18px;font-weight:800;color:#fff;padding:6px 10px 20px;letter-spacing:-.3px}
+.sidebar-logo span{color:var(--primary)}
+.s-section{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#4b5563;padding:4px 10px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:#9ca3af;font-size:13px;font-weight:500;margin-bottom:2px;transition:all .15s}
+.nav-item:hover{background:var(--sidebar-hover);color:#fff}
+.nav-item.active{background:var(--primary);color:#fff}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;min-width:22px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.25)}
+.s-divider{height:1px;background:#1e2028;margin:10px 0}
+.s-action{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;color:#6b7280;font-size:12px;font-weight:500;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;transition:all .15s}
+.s-action:hover{background:var(--sidebar-hover);color:#9ca3af}
+.sidebar-bottom{margin-top:auto;padding-top:12px}
+.sync-info{font-size:11px;color:#4b5563;padding:6px 10px;display:flex;align-items:center;gap:6px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#4b5563;flex-shrink:0}
+.sync-dot.ok{background:#22c55e}
+.sync-dot.spin{background:#f59e0b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOPBAR */
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.search-wrap{flex:1;max-width:420px;position:relative}
+.search-input{width:100%;padding:8px 12px 8px 34px;background:#f0f2f5;border:1.5px solid transparent;border-radius:20px;font-size:13px;outline:none;transition:all .2s;color:var(--text)}
+.search-input:focus{background:#fff;border-color:var(--primary)}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.per-page-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.per-page-sel{border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--text);background:#fff;cursor:pointer;outline:none}
+.page-info{font-size:12px;color:var(--text2);white-space:nowrap}
+.pagination{display:flex;align-items:center;gap:4px}
+.page-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.page-btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.page-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* GRID */
+.grid-wrap{flex:1;overflow-y:auto;padding:16px 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;align-items:start}
+
+/* EMPTY */
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text2);gap:10px}
+.empty-icon{font-size:50px;opacity:.3}
+.empty-title{font-size:16px;font-weight:600;color:var(--text)}
+.empty-desc{font-size:13px;text-align:center;max-width:300px;line-height:1.5}
+
+/* AD CARD */
+.ad-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:box-shadow .2s}
+.ad-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+
+/* Card header */
+.card-head{display:flex;align-items:center;gap:10px;padding:12px 12px 8px}
+.card-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+.card-meta{flex:1;min-width:0}
+.card-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-sub{font-size:11px;color:var(--text2)}
+.card-btns{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.adlib-lnk{font-size:9.5px;font-weight:700;padding:3px 7px;border:1px solid #ddd5fe;border-radius:5px;background:#ede9fe;color:#6d28d9;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s}
+.adlib-lnk:hover{background:#ddd6fe}
+.icon-btn{width:26px;height:26px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;background:none;color:var(--text2)}
+.icon-btn:hover{background:#f0f2f5}
+.icon-btn.fav:hover,.icon-btn.fav.on{color:var(--amber)}
+.icon-btn.del:hover{color:var(--red);background:#fee2e2}
+
+/* Copy */
+.card-copy{padding:8px 12px;font-size:12.5px;line-height:1.55;color:#374151;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card-copy.open{display:block;-webkit-line-clamp:unset}
+.copy-more{padding:0 12px 6px;font-size:11px;color:var(--primary);cursor:pointer;background:none;border:none;text-align:left;display:block}
+
+/* Media */
+.card-media{background:#000;overflow:hidden;max-height:200px}
+.card-media img{width:100%;height:auto;max-height:200px;object-fit:cover;display:block}
+.card-media video{width:100%;max-height:200px;display:block}
+.no-media{height:60px;background:#f8f9fa;display:flex;align-items:center;justify-content:center;color:#d1d5db;font-size:22px}
+
+/* Link */
+.card-link{padding:8px 12px;border-top:1px solid #f0f2f5;display:flex;align-items:center;gap:8px}
+.link-info{flex:1;min-width:0}
+.link-domain{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.link-title{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cta-btn{flex-shrink:0;padding:5px 10px;background:#1877f2;color:#fff;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
+.cta-btn:hover{background:#0f5bb5}
+
+/* Analysis */
+.card-analysis{margin:0 12px 10px;background:#f8faff;border-radius:8px;padding:10px;font-size:11.5px;line-height:1.7;color:#374151;border-left:3px solid var(--primary);white-space:pre-wrap}
+.analyzing-msg{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:var(--text2)}
+
+/* Footer */
+.card-foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #f0f2f5}
+.foot-btn{flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--text2);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.foot-btn:hover{border-color:var(--primary);color:var(--primary);background:#f0f4ff}
+.foot-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.foot-btn.primary:hover{background:var(--primary-hover)}
+.foot-btn.danger:hover{border-color:var(--red);color:var(--red);background:#fff0f0}
+
+/* MODALS */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:15px;font-weight:700}
+.modal-x{width:28px;height:28px;border:none;background:none;cursor:pointer;font-size:18px;color:var(--text2);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.modal-x:hover{background:#f0f2f5}
+.modal-body{padding:20px}
+.m-label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:14px}
+.m-label:first-child{margin-top:0}
+.m-input,.m-ta{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;color:var(--text);font-family:inherit;resize:vertical;transition:border-color .2s}
+.m-input:focus,.m-ta:focus{border-color:var(--primary)}
+.m-ta{min-height:100px}
+.modal-foot{display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--border);justify-content:flex-end}
+.m-btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+.m-btn.cancel{background:#f0f2f5;color:var(--text2)}
+.m-btn.cancel:hover{background:#e4e6eb}
+.m-btn.ok{background:var(--primary);color:#fff}
+.m-btn.ok:hover{background:var(--primary-hover)}
+.m-msg{font-size:12px;margin-top:6px;min-height:18px}
+.analysis-text{font-size:13px;line-height:1.75;color:#374151;white-space:pre-wrap}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:#1c1e21;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Offer<span>Hub</span></div>
+    <div class="login-sub">Hub de mineração e análise de ofertas</div>
+    <label class="login-label">Senha</label>
+    <input class="login-input" type="password" id="login-pwd" placeholder="Digite a senha..."
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Offer<span>Hub</span></div>
+
+    <div class="s-section">Visualizar</div>
+    <div class="nav-item active" id="nav-queue" onclick="switchTab('queue')">
+      <span class="nav-icon">📥</span> Fila
+      <span class="nav-badge" id="badge-queue">0</span>
+    </div>
+    <div class="nav-item" id="nav-saved" onclick="switchTab('saved')">
+      <span class="nav-icon">⭐</span> Salvos
+      <span class="nav-badge" id="badge-saved">0</span>
+    </div>
+
+    <div class="s-divider"></div>
+    <div class="s-section">Ações</div>
+    <button class="s-action" onclick="openImport()"><span>📋</span> Importar Ads</button>
+    <button class="s-action" onclick="exportSaved()"><span>📤</span> Exportar Salvos</button>
+    <button class="s-action" onclick="exportAll()"><span>💾</span> Exportar Tudo</button>
+    <button class="s-action" onclick="confirmClearQueue()"><span>🗑️</span> Limpar Fila</button>
+
+    <div class="sidebar-bottom">
+      <div class="s-divider"></div>
+      <div class="sync-info">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-txt">Aguardando...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input class="search-input" type="text" id="search-input"
+          placeholder="Buscar anunciante ou copy..." oninput="onSearch(this.value)">
+      </div>
+      <div class="topbar-right">
+        <div class="per-page-wrap">
+          Exibir:
+          <select class="per-page-sel" id="per-page" onchange="changePerPage(this.value)">
+            <option value="8">8</option>
+            <option value="16" selected>16</option>
+            <option value="32">32</option>
+            <option value="64">64</option>
+          </select>
+        </div>
+        <div class="page-info" id="page-info">0 ads</div>
+        <div class="pagination">
+          <button class="page-btn" id="btn-prev" onclick="prevPage()" disabled>◀</button>
+          <button class="page-btn" id="btn-next" onclick="nextPage()" disabled>▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid-wrap">
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal-bg" id="modal-import" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">📋 Importar Ads</div>
+      <button class="modal-x" onclick="closeModal('modal-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="m-label">Cole um array JSON de ads</label>
+      <textarea class="m-ta" id="import-json" style="min-height:140px;font-family:monospace;font-size:12px"
+        placeholder='[{"id":"...","advertiser":"...","copy":"..."}]'></textarea>
+      <div class="m-msg" id="import-msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-btn cancel" onclick="closeModal('modal-import')">Cancelar</button>
+      <button class="m-btn ok" onclick="doImport()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ANÁLISE -->
+<div class="modal-bg" id="modal-analysis" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🤖 Análise do Ad</div>
+      <button class="modal-x" onclick="closeModal('modal-analysis')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="analysis-text" id="analysis-content"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-btn cancel" onclick="closeModal('modal-analysis')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR -->
+<div class="modal-bg" id="modal-confirm" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="confirm-title">Confirmar</div>
+      <button class="modal-x" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:14px;line-height:1.6;color:#374151"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="m-btn cancel" onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="m-btn ok" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── ESTADO ──────────────────────────────────────────────────────────────────
+const S = {
+  token: localStorage.getItem('hub_token') || '',
+  queue: [], saved: [],
+  tab: 'queue', page: 1, perPage: 16, search: '',
+  analyzing: new Set(),
+};
+
+const API = async (method, path, body) => {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${S.token}` } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+};
+
+// ── AUTH ────────────────────────────────────────────────────────────────────
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password:''}) });
+    if (r.ok) { const { token } = await r.json(); S.token = token; localStorage.setItem('hub_token', token); showApp(); return; }
+  } catch {}
+  if (S.token) {
+    try { await API('GET','/api/health'); showApp(); return; } catch {}
+  }
+  showLogin();
+}
+
+async function doLogin() {
+  const pwd = document.getElementById('login-pwd').value;
+  document.getElementById('login-err').textContent = '';
+  try {
+    const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pwd}) });
+    if (!r.ok) { document.getElementById('login-err').textContent = 'Senha incorreta'; return; }
+    const { token } = await r.json();
+    S.token = token; localStorage.setItem('hub_token', token); showApp();
+  } catch { document.getElementById('login-err').textContent = 'Erro de conexão'; }
+}
+
+function showLogin() { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').classList.remove('visible'); }
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  loadData();
+  setInterval(loadData, 30000);
+}
+
+// ── DADOS ────────────────────────────────────────────────────────────────────
+async function loadData() {
+  setSyncStatus('loading');
+  try {
+    const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
+    S.queue = q; S.saved = sv;
+    updateBadges(); renderGrid(); setSyncStatus('ok');
+  } catch { setSyncStatus('error'); }
+}
+
+function updateBadges() {
+  document.getElementById('badge-queue').textContent = S.queue.length;
+  document.getElementById('badge-saved').textContent = S.saved.length;
+}
+
+function setSyncStatus(st) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-txt');
+  if (st === 'loading') { dot.className = 'sync-dot spin'; txt.textContent = 'Sincronizando...'; }
+  else if (st === 'ok') { dot.className = 'sync-dot ok'; txt.textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+  else { dot.className = 'sync-dot'; txt.textContent = 'Erro de sync'; }
+}
+
+// ── TABS / BUSCA / PAGINAÇÃO ─────────────────────────────────────────────────
+function switchTab(tab) {
+  S.tab = tab; S.page = 1;
+  document.getElementById('nav-queue').className = 'nav-item' + (tab==='queue'?' active':'');
+  document.getElementById('nav-saved').className = 'nav-item' + (tab==='saved'?' active':'');
+  renderGrid();
+}
+
+function onSearch(v) { S.search = v.toLowerCase(); S.page = 1; renderGrid(); }
+function changePerPage(v) { S.perPage = parseInt(v); S.page = 1; renderGrid(); }
+function prevPage() { if (S.page > 1) { S.page--; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; } }
+function nextPage() {
+  if (S.page < Math.ceil(getFiltered().length / S.perPage)) { S.page++; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; }
+}
+
+function getFiltered() {
+  const list = S.tab === 'queue' ? S.queue : S.saved;
+  if (!S.search) return list;
+  return list.filter(a =>
+    (a.advertiser||'').toLowerCase().includes(S.search) ||
+    (a.copy||'').toLowerCase().includes(S.search) ||
+    (a.linkTitle||'').toLowerCase().includes(S.search)
+  );
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / S.perPage));
+  if (S.page > pages) S.page = pages;
+  const start = (S.page-1) * S.perPage;
+  const items = filtered.slice(start, start + S.perPage);
+
+  const info = document.getElementById('page-info');
+  info.textContent = total === 0 ? '0 ads' : `${start+1}–${Math.min(start+S.perPage,total)} de ${total}`;
+  document.getElementById('btn-prev').disabled = S.page <= 1;
+  document.getElementById('btn-next').disabled = S.page >= pages;
+
+  const grid = document.getElementById('grid');
+  if (items.length === 0) {
+    const isQ = S.tab === 'queue';
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">${isQ?'📭':'⭐'}</div>
+      <div class="empty-title">${isQ?'Fila vazia':'Nenhum ad salvo'}</div>
+      <div class="empty-desc">${isQ
+        ? 'Configure a extensão Chrome e navegue pelo Facebook para capturar anúncios automaticamente.'
+        : 'Salve ads da fila para analisar com IA e acompanhar os melhores.'}</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(ad => buildCard(ad)).join('');
+}
+
+function buildCard(ad) {
+  const isQ = S.tab === 'queue';
+  const id = ad.id || '';
+  const copy = ad.copy || '';
+  const isLong = copy.length > 210;
+  const name = ad.advertiser || 'Desconhecido';
+  const initials = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+
+  // Media
+  let media = '';
+  if (ad.videoUrl) {
+    media = `<div class="card-media"><video src="${e(ad.videoUrl)}" poster="${e(ad.imageUrl||'')}" controls preload="none"></video></div>`;
+  } else if (ad.imageUrl) {
+    media = `<div class="card-media"><img src="${e(ad.imageUrl)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
+  }
+
+  // Link
+  let link = '';
+  if (ad.linkTitle || ad.snapshotUrl) {
+    let domain = '';
+    try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
+    link = `<div class="card-link">
+      <div class="link-info">
+        ${domain?`<div class="link-domain">${e(domain)}</div>`:''}
+        ${ad.linkTitle?`<div class="link-title">${e(ad.linkTitle)}</div>`:''}
+      </div>
+      ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">AD LIB ↗</a>`:''}
+    </div>`;
+  }
+
+  // Análise
+  let analysis = '';
+  if (S.analyzing.has(id)) {
+    analysis = `<div class="analyzing-msg">⏳ Analisando com IA...</div>`;
+  } else if (!isQ && ad.analysis) {
+    analysis = `<div class="card-analysis">${e(ad.analysis)}</div>`;
+  }
+
+  // Footer
+  let footer = '';
+  if (isQ) {
+    footer = `<div class="card-foot">
+      <button class="foot-btn primary" onclick="saveAd('${id}')">⭐ Salvar</button>
+      <button class="foot-btn" onclick="analyzeAndSave('${id}')">🤖 Analisar</button>
+      <button class="foot-btn danger" onclick="deleteQueue('${id}')">✕ Ignorar</button>
+    </div>`;
+  } else {
+    footer = `<div class="card-foot">
+      ${ad.analysis
+        ? `<button class="foot-btn primary" onclick="showAnalysis('${id}')">📋 Ver Análise</button>`
+        : `<button class="foot-btn primary" onclick="analyzeSaved('${id}')">🤖 Analisar</button>`}
+      <button class="foot-btn danger" onclick="deleteSaved('${id}')">🗑️ Remover</button>
+    </div>`;
+  }
+
+  return `<div class="ad-card" id="card-${id}">
+    <div class="card-head">
+      <div class="card-avatar">${initials}</div>
+      <div class="card-meta">
+        <div class="card-name" title="${e(name)}">${e(name)}</div>
+        <div class="card-sub">Patrocinado · ${ad.addedAt||ad.createdAt||''}</div>
+      </div>
+      <div class="card-btns">
+        ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="adlib-lnk">AD LIB</a>`:''}
+      </div>
+    </div>
+    ${copy?`<div class="card-copy" id="copy-${id}">${e(copy)}</div>${isLong?`<button class="copy-more" onclick="toggleCopy('${id}')">Ver mais ▾</button>`:''}` : ''}
+    ${media}
+    ${link}
+    ${analysis}
+    ${footer}
+  </div>`;
+}
+
+function e(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function toggleCopy(id) {
+  const el = document.getElementById('copy-'+id);
+  const btn = el.nextElementSibling;
+  if (!btn || !btn.classList.contains('copy-more')) return;
+  const open = el.classList.toggle('open');
+  btn.textContent = open ? 'Ver menos ▴' : 'Ver mais ▾';
+}
+
+// ── AÇÕES ────────────────────────────────────────────────────────────────────
+async function saveAd(id) {
+  const ad = S.queue.find(a=>a.id===id); if (!ad) return;
+  try {
+    await API('POST','/api/saved',ad);
+    await API('DELETE',`/api/queue/${id}`);
+    S.queue = S.queue.filter(a=>a.id!==id);
+    S.saved.unshift(ad);
+    updateBadges(); renderGrid(); toast('✅ Ad salvo!');
+  } catch { toast('❌ Erro ao salvar'); }
+}
+
+async function analyzeAndSave(id) {
+  const ad = S.queue.find(a=>a.id===id); if (!ad) return;
+  try {
+    await API('POST','/api/saved',ad);
+    await API('DELETE',`/api/queue/${id}`);
+    S.queue = S.queue.filter(a=>a.id!==id);
+    S.saved.unshift({...ad});
+    updateBadges(); renderGrid(); toast('✅ Salvo! Analisando...');
+    await analyzeSaved(id);
+  } catch { toast('❌ Erro ao salvar'); }
+}
+
+async function analyzeSaved(id) {
+  const ad = S.saved.find(a=>a.id===id); if (!ad) return;
+  S.analyzing.add(id); renderGrid();
+  try {
+    const { analysis } = await API('POST','/api/analyze',{ad});
+    await API('PATCH',`/api/saved/${id}`,{analysis});
+    const idx = S.saved.findIndex(a=>a.id===id);
+    if (idx !== -1) S.saved[idx].analysis = analysis;
+    S.analyzing.delete(id); renderGrid(); toast('✅ Análise concluída!');
+  } catch (err) {
+    S.analyzing.delete(id); renderGrid();
+    toast('❌ ' + (err.message.includes('500') ? 'Configure a chave da API Claude' : 'Erro na análise'));
+  }
+}
+
+function showAnalysis(id) {
+  const ad = S.saved.find(a=>a.id===id);
+  if (!ad?.analysis) return;
+  document.getElementById('analysis-content').textContent = ad.analysis;
+  document.getElementById('modal-analysis').style.display = 'flex';
+}
+
+async function deleteQueue(id) {
+  try {
+    await API('DELETE',`/api/queue/${id}`);
+    S.queue = S.queue.filter(a=>a.id!==id);
+    updateBadges(); renderGrid(); toast('🗑️ Removido da fila');
+  } catch { toast('❌ Erro'); }
+}
+
+async function deleteSaved(id) {
+  try {
+    await API('DELETE',`/api/saved/${id}`);
+    S.saved = S.saved.filter(a=>a.id!==id);
+    updateBadges(); renderGrid(); toast('🗑️ Removido dos salvos');
+  } catch { toast('❌ Erro'); }
+}
+
+function confirmClearQueue() {
+  if (!S.queue.length) { toast('Fila já está vazia'); return; }
+  showConfirm('Limpar Fila',
+    `Remover todos os ${S.queue.length} ads da fila? Esta ação não pode ser desfeita.`,
+    async () => { await API('DELETE','/api/queue'); S.queue=[]; updateBadges(); renderGrid(); toast('🗑️ Fila limpa'); }
+  );
+}
+
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').onclick = () => { closeModal('modal-confirm'); onOk(); };
+  document.getElementById('modal-confirm').style.display = 'flex';
+}
+
+// ── EXPORTAR ─────────────────────────────────────────────────────────────────
+function exportSaved() {
+  if (!S.saved.length) { toast('Nenhum ad salvo para exportar'); return; }
+  download('offer-hub-salvos.json', JSON.stringify(S.saved, null, 2));
+  toast(`📤 ${S.saved.length} ads exportados`);
+}
+function exportAll() {
+  download('offer-hub-completo.json', JSON.stringify({queue:S.queue,saved:S.saved},null,2));
+  toast(`📤 Exportado: ${S.queue.length} na fila + ${S.saved.length} salvos`);
+}
+function download(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'application/json'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ── IMPORTAR ──────────────────────────────────────────────────────────────────
+function openImport() { document.getElementById('modal-import').style.display='flex'; }
+async function doImport() {
+  const raw = document.getElementById('import-json').value.trim();
+  const msg = document.getElementById('import-msg');
+  try {
+    const ads = JSON.parse(raw);
+    if (!Array.isArray(ads)) throw new Error('JSON deve ser um array');
+    await API('POST','/api/queue',ads);
+    msg.style.color='#22c55e'; msg.textContent=`✅ ${ads.length} ad(s) importado(s)!`;
+    await loadData();
+    setTimeout(()=>closeModal('modal-import'),1200);
+  } catch(err) { msg.style.color='#ef4444'; msg.textContent='❌ '+err.message; }
+}
+
+// ── MODAIS ────────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+document.querySelectorAll('.modal-bg').forEach(el=>{
+  el.addEventListener('click',ev=>{ if(ev.target===el) closeModal(el.id); });
+});
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
