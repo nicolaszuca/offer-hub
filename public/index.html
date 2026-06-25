@@ -307,7 +307,7 @@ const API = async (method, path, body) => {
 };
 
 // ── AUTH ────────────────────────────────────────────────────────────────────
-async async function checkAuth() {
+async function checkAuth() {
   try {
     const r = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password:''}) });
     if (r.ok) { const { token } = await r.json(); S.token = token; localStorage.setItem('hub_token', token); showApp(); return; }
