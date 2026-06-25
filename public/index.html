@@ -81,54 +81,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty-title{font-size:16px;font-weight:600;color:var(--text)}
 .empty-desc{font-size:13px;text-align:center;max-width:300px;line-height:1.5}
 
-/* AD CARD */
+/* HUB CARD - Facebook style */
 .hub-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:box-shadow .2s}
-.hub-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.hub-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.13)}
 
 /* Card header */
-.card-head{display:flex;align-items:center;gap:10px;padding:12px 12px 8px}
-.card-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+.card-head{display:flex;align-items:center;gap:9px;padding:10px 10px 6px}
+.card-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
 .card-meta{flex:1;min-width:0}
-.card-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-name{font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-sub{font-size:11px;color:var(--text2)}
-.card-btns{display:flex;align-items:center;gap:3px;flex-shrink:0}
-.adlib-lnk{font-size:9.5px;font-weight:700;padding:3px 7px;border:1px solid #ddd5fe;border-radius:5px;background:#ede9fe;color:#6d28d9;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s}
-.adlib-lnk:hover{background:#ddd6fe}
-.icon-btn{width:26px;height:26px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;background:none;color:var(--text2)}
-.icon-btn:hover{background:#f0f2f5}
-.icon-btn.fav:hover,.icon-btn.fav.on{color:var(--amber)}
-.icon-btn.del:hover{color:var(--red);background:#fee2e2}
+.card-actions{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.adlib-btn{font-size:10px;font-weight:700;padding:4px 8px;border:none;border-radius:5px;background:#e7f3ff;color:#1877f2;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s}
+.adlib-btn:hover{background:#cce4ff}
+.hdr-icon{width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;background:none;color:var(--text2)}
+.hdr-icon:hover{background:#f0f2f5}
+.hdr-icon.save:hover{color:var(--amber)}
+.hdr-icon.analyze:hover{color:var(--primary);background:#ede9fe}
+.hdr-icon.del:hover{color:var(--red);background:#fee2e2}
 
 /* Copy */
-.card-copy{padding:8px 12px;font-size:12.5px;line-height:1.55;color:#374151;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card-copy{padding:6px 10px 8px;font-size:13px;line-height:1.5;color:#1c1e21;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-copy.open{display:block;-webkit-line-clamp:unset}
-.copy-more{padding:0 12px 6px;font-size:11px;color:var(--primary);cursor:pointer;background:none;border:none;text-align:left;display:block}
+.copy-more{padding:0 10px 6px;font-size:12px;color:var(--text2);cursor:pointer;background:none;border:none;text-align:left;display:block;font-weight:600}
 
-/* Media */
-.card-media{background:#000;overflow:hidden;max-height:200px}
-.card-media img{width:100%;height:auto;max-height:200px;object-fit:cover;display:block}
-.card-media video{width:100%;max-height:200px;display:block}
-.no-media{height:60px;background:#f8f9fa;display:flex;align-items:center;justify-content:center;color:#d1d5db;font-size:22px}
+/* Media - full width, tall */
+.card-media{background:#000;overflow:hidden;line-height:0}
+.card-media img{width:100%;height:auto;display:block;max-height:360px;object-fit:cover}
+.card-media video{width:100%;display:block;max-height:360px}
 
-/* Link */
-.card-link{padding:8px 12px;border-top:1px solid #f0f2f5;display:flex;align-items:center;gap:8px}
-.link-info{flex:1;min-width:0}
-.link-domain{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.link-title{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.cta-btn{flex-shrink:0;padding:5px 10px;background:#1877f2;color:#fff;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
-.cta-btn:hover{background:#0f5bb5}
+/* Link card - Facebook style */
+.card-link{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f0f2f5;border-top:1px solid #e4e6eb}
+.link-left{flex:1;min-width:0}
+.link-domain{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.link-title{font-size:12.5px;font-weight:700;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.link-desc{font-size:11px;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:1px}
+.cta-btn{flex-shrink:0;padding:7px 14px;background:#e4e6eb;color:#1c1e21;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s}
+.cta-btn:hover{background:#d8dadf}
 
 /* Analysis */
-.card-analysis{margin:0 12px 10px;background:#f8faff;border-radius:8px;padding:10px;font-size:11.5px;line-height:1.7;color:#374151;border-left:3px solid var(--primary);white-space:pre-wrap}
-.analyzing-msg{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:var(--text2)}
-
-/* Footer */
-.card-foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #f0f2f5}
-.foot-btn{flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--text2);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
-.foot-btn:hover{border-color:var(--primary);color:var(--primary);background:#f0f4ff}
-.foot-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-.foot-btn.primary:hover{background:var(--primary-hover)}
-.foot-btn.danger:hover{border-color:var(--red);color:var(--red);background:#fff0f0}
+.card-analysis{margin:0 10px 10px;background:#f8faff;border-radius:8px;padding:10px;font-size:11.5px;line-height:1.7;color:#374151;border-left:3px solid var(--primary);white-space:pre-wrap}
+.analyzing-msg{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;color:var(--text2)}
 
 /* MODALS */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -425,7 +418,7 @@ function buildCard(ad) {
   const isQ = S.tab === 'queue';
   const id = ad.id || '';
   const copy = ad.copy || '';
-  const isLong = copy.length > 210;
+  const isLong = copy.length > 180;
   const name = ad.advertiser || 'Desconhecido';
   const initials = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
 
@@ -437,21 +430,23 @@ function buildCard(ad) {
     media = `<div class="card-media"><img src="${e(ad.imageUrl)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
-  // Link
+  // Link card (Facebook style)
   let link = '';
-  if (ad.linkTitle || ad.snapshotUrl) {
+  if (ad.linkTitle || ad.linkDesc || (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com/ads/library'))) {
     let domain = '';
     try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
+    const ctaLabel = ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
-      <div class="link-info">
+      <div class="link-left">
         ${domain?`<div class="link-domain">${e(domain)}</div>`:''}
         ${ad.linkTitle?`<div class="link-title">${e(ad.linkTitle)}</div>`:''}
+        ${ad.linkDesc?`<div class="link-desc">${e(ad.linkDesc)}</div>`:''}
       </div>
-      ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">AD LIB ↗</a>`:''}
+      ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''}
     </div>`;
   }
 
-  // Análise
+  // Analysis
   let analysis = '';
   if (S.analyzing.has(id)) {
     analysis = `<div class="analyzing-msg">⏳ Analisando com IA...</div>`;
@@ -459,21 +454,23 @@ function buildCard(ad) {
     analysis = `<div class="card-analysis">${e(ad.analysis)}</div>`;
   }
 
-  // Footer
-  let footer = '';
+  // AD LIBRARY button (always points to fb ad library)
+  const adlibUrl = ad.snapshotUrl || '';
+  const adlibBtn = adlibUrl ? `<a href="${e(adlibUrl)}" target="_blank" class="adlib-btn">AD LIBRARY</a>` : '';
+
+  // Action icons in header
+  let actionIcons = '';
   if (isQ) {
-    footer = `<div class="card-foot">
-      <button class="foot-btn primary" onclick="saveAd('${id}')">⭐ Salvar</button>
-      <button class="foot-btn" onclick="analyzeAndSave('${id}')">🤖 Analisar</button>
-      <button class="foot-btn danger" onclick="deleteQueue('${id}')">✕ Ignorar</button>
-    </div>`;
+    actionIcons = `
+      <button class="hdr-icon save" title="Salvar" onclick="saveAd('${id}')">⭐</button>
+      <button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeAndSave('${id}')">🤖</button>
+      <button class="hdr-icon del" title="Ignorar" onclick="deleteQueue('${id}')">🗑️</button>`;
   } else {
-    footer = `<div class="card-foot">
+    actionIcons = `
       ${ad.analysis
-        ? `<button class="foot-btn primary" onclick="showAnalysis('${id}')">📋 Ver Análise</button>`
-        : `<button class="foot-btn primary" onclick="analyzeSaved('${id}')">🤖 Analisar</button>`}
-      <button class="foot-btn danger" onclick="deleteSaved('${id}')">🗑️ Remover</button>
-    </div>`;
+        ? `<button class="hdr-icon analyze" title="Ver Análise" onclick="showAnalysis('${id}')">📋</button>`
+        : `<button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeSaved('${id}')">🤖</button>`}
+      <button class="hdr-icon del" title="Remover" onclick="deleteSaved('${id}')">🗑️</button>`;
   }
 
   return `<div class="hub-card" id="card-${id}">
@@ -481,17 +478,17 @@ function buildCard(ad) {
       <div class="card-avatar">${initials}</div>
       <div class="card-meta">
         <div class="card-name" title="${e(name)}">${e(name)}</div>
-        <div class="card-sub">Patrocinado · ${ad.addedAt||ad.createdAt||''}</div>
+        <div class="card-sub">🌐 Patrocinado · ${e(ad.addedAt||ad.createdAt||'')}</div>
       </div>
-      <div class="card-btns">
-        ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="adlib-lnk">AD LIB</a>`:''}
+      <div class="card-actions">
+        ${adlibBtn}
+        ${actionIcons}
       </div>
     </div>
     ${copy?`<div class="card-copy" id="copy-${id}">${e(copy)}</div>${isLong?`<button class="copy-more" onclick="toggleCopy('${id}')">Ver mais ▾</button>`:''}` : ''}
     ${media}
     ${link}
     ${analysis}
-    ${footer}
   </div>`;
 }
 
