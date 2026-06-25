@@ -614,6 +614,7 @@ async function deleteSaved(id) {
     updateBadges(); renderGrid(); toast('🗑️ Removido dos salvos');
   } catch { toast('❌ Erro'); }
 }
+
 function confirmClearQueue() {
   if (!S.queue.length) { toast('Fila já está vazia'); return; }
   showConfirm('Limpar Fila',
@@ -629,7 +630,7 @@ function showConfirm(title, msg, onOk) {
   document.getElementById('modal-confirm').style.display = 'flex';
 }
 
-// ── EXPORTAR───────────────────────────────────────────────────────────────
+// ── EXPORTAR ─────────────────────────────────────────────────────────────────
 function exportSaved() {
   if (!S.saved.length) { toast('Nenhum ad salvo para exportar'); return; }
   download('offer-hub-salvos.json', JSON.stringify(S.saved, null, 2));
@@ -638,8 +639,6 @@ function exportSaved() {
 function exportAll() {
   download('offer-hub-completo.json', JSON.stringify({queue:S.queue,saved:S.saved},null,2));
   toast(`📤 Exportado: ${S.queue.length} na fila + ${S.saved.length} salvos`);
-}
-fu);
 }
 function download(name, content) {
   const a = document.createElement('a');
