@@ -456,7 +456,7 @@ function buildCard(ad) {
   }
 
   // AD LIBRARY button — abre página do anunciante na biblioteca de anúncios
-  const adlibUrl = ad.adLibraryId ? (fb => fb + '?active_status=active&ad_type=all&country=BR&id=' + ad.adLibraryId + '&is_targeted_country=false&media_type=all&search_type=page&sort_data%5Bmode%5D=total_impressions&sort_data%5Bdirection%5D=desc')('https://www.facebook.com/ads/library/') : '';
+  const adlibUrl = ad.adLibraryId ? ('https://www.facebook.com/ads/library/' + '?active_status=active&ad_type=all&country=BR&id=' + ad.adLibraryId + '&is_targeted_country=false&media_type=all&search_type=page&sort_data%5Bmode%5D=total_impressions&sort_data%5Bdirection%5D=desc') : (ad.advertiser ? 'https://www.facebook.com/ads/library/' + '?active_status=active&ad_type=all&country=BR&is_targeted_country=false&media_type=all&search_type=page&sort_data%5Bmode%5D=total_impressions&sort_data%5Bdirection%5D=desc&q=' + encodeURIComponent(ad.advertiser) : '');
   const adlibBtn = adlibUrl ? `<a href="${e(adlibUrl)}" target="_blank" class="adlib-btn">AD LIBRARY</a>` : '';
 
   // Action icons in header
