@@ -110,8 +110,12 @@ function extractAd(node) {
     // ── Ad Library ID ────────────────────────────────────────────────────────
     const adLibraryId =
       deepGet(node, "adLibraryId") ||
+      deepGet(node, "ad_archive_id") ||
+      deepGet(node, "adArchiveId") ||
       deepGet(sections, "adLibraryId") ||
+      deepGet(sections, "ad_archive_id") ||
       deepGet(contentStory, "adLibraryId") ||
+      deepGet(contentStory, "ad_archive_id") ||
       "";
 
     // ── Copy text ────────────────────────────────────────────────────────────
