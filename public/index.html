@@ -356,7 +356,7 @@ const API = async (method, path, body) => {
 // ── AUTH ────────────────────────────────────────────────────────────────────
 async function checkAuth() {
   try {
-    const r = await fetch('/api/auth', { method: 'POST', headers:{'Content-Type'>:'application/json'}, body: JSON.stringify({password:''}) });
+    const r = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password:''}) });
     if (r.ok) { const { token } = await r.json(); S.token = token; localStorage.setItem('hub_token', token); showApp(); return; }
   } catch {}
   if (S.token) {
@@ -614,7 +614,6 @@ async function deleteSaved(id) {
     updateBadges(); renderGrid(); toast('🗑️ Removido dos salvos');
   } catch { toast('❌ Erro'); }
 }
-
 function confirmClearQueue() {
   if (!S.queue.length) { toast('Fila já está vazia'); return; }
   showConfirm('Limpar Fila',
@@ -630,7 +629,76 @@ function showConfirm(title, msg, onOk) {
   document.getElementById('modal-confirm').style.display = 'flex';
 }
 
-// ── EXPORTAR ─────────────────────────────────────────────────────────────────
+// ── EXPORTAR───────────────────────────────────────────────────────────────
 function exportSaved() {
   if (!S.saved.length) { toast('Nenhum ad salvo para exportar'); return; }
-  download('o
+  download('offer-hub-salvos.json', JSON.stringify(S.saved, null, 2));
+  toast(`📤 ${S.saved.length} ads exportados`);
+}
+function exportAll() {
+  download('offer-hub-completo.json', JSON.stringify({queue:S.queue,saved:S.saved},null,2));
+  toast(`📤 Exportado: ${S.queue.length} na fila + ${S.saved.length} salvos`);
+}
+fu);
+}
+function download(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'application/json'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ── IMPORTAR ──────────────────────────────────────────────
+function openImport() { document.getElementById('modal-import').style.display='flex'; }
+async function doImport() {
+  const raw = document.getElementById('import-json').value.trim();
+  const msg = document.getElementById('import-msg');
+  try {
+    const ads = JSON.parse(raw);
+    if (!Array.isArray(ads)) throw new Error('JSON deve ser um array');
+    await API('POST','/api/queue',ads);
+    msg.style.color='#22c55e'; msg.textContent=`✅ ${ads.length} ad(s) importado(s)!`;
+    await loadData();
+    setTimeout(()=>closeModal('modal-import'),1200);
+  } catch(err) { msg.style.color='#ef4444'; msg.textContent='❌ '+err.message; }
+}
+
+// ── MODAIS ───────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+document.querySelectorAll('.modal-bg').forEach(el=>{
+  el.addEventListener('click',ev=>{ if(ev.target===el) closeModal(el.id); });
+});
+
+// ── TOAST ─────────────────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── DARK MODE ────────────────────────────────────────────
+(function() {
+  if (localStorage.getItem('hub_dark') === '1') {
+    document.body.classList.add('dark');
+  }
+})();
+
+function updateDarkBtn() {
+  const btn = document.getElementById('dark-toggle');
+  if (!btn) return;
+  const isDark = document.body.classList.contains('dark');
+  btn.innerHTML = isDark ? '<span>☀️</span> Modo Claro' : '<span>🌙</span> Modo Escuro';
+}
+
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('hub_dark', isDark ? '1' : '0');
+  updateDarkBtn();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+checkAuth();
+updateDarkBtn();
+</script>
+</body>
+</html>
