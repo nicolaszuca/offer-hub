@@ -201,32 +201,33 @@ function extractAd(node) {
 
 // ─── SEND TO HUB ──────────────────────────────────────────────────────────────
 async function sendToHub(ads) {
-  if (!hubUrl) {
-    console.warn("[OfferHub] Hub URL não configurada. Configure no popup da extensão.");
-    return;
-  }
-
-  const { hubToken } = await chrome.storage.sync.get(["hubToken"]);
-  const token = hubToken || "no-auth";
-
-  // Roteia pelo background service worker (sem restrição CORS)
-  try { chrome.runtime.sendMessage(
-    { type: "SEND_TO_HUB", hubUrl, token, ads },
-    (response) => {
-      if (chrome.runtime.lastError) {
-        // Contexto invalidado = extensão foi recarregada; ignorar silenciosamente
-        return;
-      }
-      if (response?.ok) {
-        capturedCount += ads.length;
-        chrome.storage.sync.set({ capturedCount });
-        chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length });
-        console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
-      } else {
-        console.warn("[OfferHub] Erro ao enviar:", response?.error);
-      }
+  try {
+    if (!hubUrl) {
+      console.warn("[OfferHub] Hub URL não configurada. Configure no popup da extensão.");
+      return;
     }
-  ); } catch(e) { /* extensão recarregada, ignorar */ }
+
+    const { hubToken } = await chrome.storage.sync.get(["hubToken"]);
+    const token = hubToken || "no-auth";
+
+    // Roteia pelo background service worker (sem restrição CORS)
+    chrome.runtime.sendMessage(
+      { type: "SEND_TO_HUB", hubUrl, token, ads },
+      (response) => {
+        if (chrome.runtime.lastError) return; // contexto invalidado, ignorar
+        if (response?.ok) {
+          capturedCount += ads.length;
+          chrome.storage.sync.set({ capturedCount });
+          chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length });
+          console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
+        } else {
+          console.warn("[OfferHub] Erro ao enviar:", response?.error);
+        }
+      }
+    );
+  } catch(e) {
+    // Extension context invalidated após recarga — ignorar
+  }
 }
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
