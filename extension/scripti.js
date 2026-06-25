@@ -30,6 +30,18 @@
     return Array.from(urls);
   }
 
+  // Extrai ad_archive_id (= adLibraryId) e page_id do texto bruto do GraphQL
+  function extractSponsoredIds(text) {
+    const adLibIds = [];
+    const pageIds = [];
+    let m;
+    const archiveRe = /"ad_archive_id"\s*:\s*"(\d+)"/g;
+    while ((m = archiveRe.exec(text)) !== null) adLibIds.push(m[1]);
+    const pageRe = /"page_id"\s*:\s*"(\d+)"/g;
+    while ((m = pageRe.exec(text)) !== null) pageIds.push(m[1]);
+    return { adLibIds, pageIds };
+  }
+
   function postPayload(text) {
     if (
       text.includes("SponsoredData") &&
@@ -40,8 +52,9 @@
       )
     ) {
       const videoUrls = extractRawVideoUrls(text);
-      console.log("[OfferHub] ✅ Anúncio detectado, enviando... vídeos encontrados:", videoUrls.length);
-      window.postMessage({ type: OFFER_HUB_ID, payload: text, videoUrls }, window.location.origin);
+      const { adLibIds, pageIds } = extractSponsoredIds(text);
+      console.log("[OfferHub] ✅ Anúncio detectado | vídeos:", videoUrls.length, "| adLibIds:", adLibIds.length, "| pageIds:", pageIds.length);
+      window.postMessage({ type: OFFER_HUB_ID, payload: text, videoUrls, adLibIds, pageIds }, window.location.origin);
     }
   }
 
