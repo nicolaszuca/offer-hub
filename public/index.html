@@ -455,8 +455,10 @@ function buildCard(ad) {
     analysis = `<div class="card-analysis">${e(ad.analysis)}</div>`;
   }
 
-  // AD LIBRARY button (always points to fb ad library)
-  const adlibUrl = ad.snapshotUrl || '';
+  // AD LIBRARY button — abre página do anunciante na biblioteca de anúncios
+  const adlibUrl = ad.pageId
+    ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&view_all_page_id=${e(ad.pageId)}&search_type=page`
+    : (ad.snapshotUrl || '');
   const adlibBtn = adlibUrl ? `<a href="${e(adlibUrl)}" target="_blank" class="adlib-btn">AD LIBRARY</a>` : '';
 
   // Action icons in header
