@@ -35,10 +35,16 @@
     const adLibIds = [];
     const pageIds = [];
     let m;
-    const archiveRe = /"ad_archive_id"\s*:\s*"(\d+)"/g;
-    while ((m = archiveRe.exec(text)) !== null) adLibIds.push(m[1]);
+    // ad_archive_id, adLibraryId, adArchiveId - vários formatos possíveis
+    const archiveRe = /"(?:ad_archive_id|adLibraryId|adArchiveId|archive_id)"\s*:\s*"(\d{15,}?)"/g;
+    while ((m = archiveRe.exec(text)) !== null) {
+      if (!adLibIds.includes(m[1])) adLibIds.push(m[1]);
+    }
+    // page_id
     const pageRe = /"page_id"\s*:\s*"(\d+)"/g;
-    while ((m = pageRe.exec(text)) !== null) pageIds.push(m[1]);
+    while ((m = pageRe.exec(text)) !== null) {
+      if (!pageIds.includes(m[1])) pageIds.push(m[1]);
+    }
     return { adLibIds, pageIds };
   }
 
