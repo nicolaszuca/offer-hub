@@ -82,8 +82,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty-desc{font-size:13px;text-align:center;max-width:300px;line-height:1.5}
 
 /* AD CARD */
-.ad-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:box-shadow .2s}
-.ad-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.hub-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:box-shadow .2s}
+.hub-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
 
 /* Card header */
 .card-head{display:flex;align-items:center;gap:10px;padding:12px 12px 8px}
@@ -314,7 +314,7 @@ const API = async (method, path, body) => {
 };
 
 // ── AUTH ────────────────────────────────────────────────────────────────────
-async function checkAuth() {
+async async function checkAuth() {
   try {
     const r = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password:''}) });
     if (r.ok) { const { token } = await r.json(); S.token = token; localStorage.setItem('hub_token', token); showApp(); return; }
@@ -476,7 +476,7 @@ function buildCard(ad) {
     </div>`;
   }
 
-  return `<div class="ad-card" id="card-${id}">
+  return `<div class="hub-card" id="card-${id}">
     <div class="card-head">
       <div class="card-avatar">${initials}</div>
       <div class="card-meta">
