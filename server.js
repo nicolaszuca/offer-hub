@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 
 // ─── VIDEOS DIR ───────────────────────────────────────────────────────────────
-const VIDEOS_DIR = path.join(__dirname, 'public', 'videos');
+// VIDEOS_DIR env var aponta pro volume persistente no Railway (/data/videos)
+// Se não definido, usa public/videos (fallback local)
+const VIDEOS_DIR = process.env.VIDEOS_DIR || path.join(__dirname, 'public', 'videos');
 if (!fs.existsSync(VIDEOS_DIR)) fs.mkdirSync(VIDEOS_DIR, { recursive: true });
 
 const app = express();
@@ -57,6 +59,8 @@ app.use((req, res, next) => {
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve vídeos do VIDEOS_DIR (pode ser volume externo)
+app.use('/videos', express.static(VIDEOS_DIR));
 
 // ─── AUTH ROUTE ───────────────────────────────────────────────────────────────
 app.post('/api/auth', (req, res) => {
