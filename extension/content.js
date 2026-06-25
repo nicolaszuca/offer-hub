@@ -142,16 +142,13 @@ function extractAd(node) {
     const imageUri = photoImages.find(p => p?.uri)?.uri || "";
 
     // ── Video ─────────────────────────────────────────────────────────────────
-    // Search broadly: contentStory first, then full sections, then full node
+    // Search the entire node tree with increased depth for video URLs
     const videoUrl =
-      deepGet(contentStory, "playable_url_quality_hd") ||
-      deepGet(contentStory, "playable_url") ||
-      deepGet(contentStory, "browser_native_hd_url") ||
-      deepGet(contentStory, "browser_native_sd_url") ||
-      deepGet(sections, "playable_url_quality_hd") ||
-      deepGet(sections, "playable_url") ||
-      deepGet(node, "playable_url_quality_hd") ||
-      deepGet(node, "playable_url") ||
+      deepGet(node, "playable_url_quality_hd", 20) ||
+      deepGet(node, "playable_url", 20) ||
+      deepGet(node, "browser_native_hd_url", 20) ||
+      deepGet(node, "browser_native_sd_url", 20) ||
+      deepGet(node, "stream_url", 20) ||
       "";
     const thumbnailUri =
       deepGet(contentStory, "thumbnailImage")?.uri ||
@@ -180,6 +177,8 @@ function extractAd(node) {
     return {
       id: uniqueId,
       advertiser: pageName || "Desconhecido",
+      pageId,
+      adLibraryId,
       copy: postText,
       linkTitle: fouterTitle,
       linkDesc: fouterDesc,
