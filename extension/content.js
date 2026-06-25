@@ -214,19 +214,21 @@ async function sendToHub(ads) {
     chrome.runtime.sendMessage(
       { type: "SEND_TO_HUB", hubUrl, token, ads },
       (response) => {
-        if (chrome.runtime.lastError) return; // contexto invalidado, ignorar
-        if (response?.ok) {
-          capturedCount += ads.length;
-          chrome.storage.sync.set({ capturedCount });
-          chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length });
-          console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
-        } else {
-          console.warn("[OfferHub] Erro ao enviar:", response?.error);
-        }
+        try {
+          if (chrome.runtime.lastError) return;
+          if (response?.ok) {
+            capturedCount += ads.length;
+            try { chrome.storage.sync.set({ capturedCount }); } catch(_) {}
+            try { chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length }); } catch(_) {}
+            console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
+          } else {
+            console.warn("[OfferHub] Erro ao enviar:", response?.error);
+          }
+        } catch(_) {}
       }
     );
   } catch(e) {
-    // Extension context invalidated após recarga — ignorar
+    // Extension context invalidated após recarga — ignorar silenciosamente
   }
 }
 
