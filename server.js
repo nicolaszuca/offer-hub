@@ -74,7 +74,7 @@ app.post('/api/auth', (req, res) => {
 
 // ─── QUEUE ────────────────────────────────────────────────────────────────────
 app.get('/api/queue', auth, (req, res) => {
-  const rows = db.prepare('SELECT id, data FROM queue ORDER BY rowid ASC').all();
+  const rows = db.prepare('SELECT id, data FROM queue ORDER BY rowid DESC').all();
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id })));
 });
 
