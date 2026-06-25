@@ -33,7 +33,9 @@ db.exec(`
 `);
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
-const AUTH_ENABLED = PASSWORD.length > 0;
+// Login temporariamente desativado a pedido do usuário (mesmo com HUB_PASSWORD setada no Railway).
+// Pra reativar: trocar de volta para `PASSWORD.length > 0`.
+const AUTH_ENABLED = false;
 const getToken = () =>
   AUTH_ENABLED
     ? crypto.createHash('sha256').update(PASSWORD + 'offer-hub-salt').digest('hex')
