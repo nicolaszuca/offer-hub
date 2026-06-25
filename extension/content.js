@@ -46,8 +46,9 @@ function findSponsoredNodes(items) {
     if (!node || typeof node !== "object") return;
     const sections = node.comet_sections;
     if (!sections) return;
-    const str = JSON.stringify(sections);
-    if (str.includes("SponsoredData")) nodes.push(node);
+    if (JSON.stringify(sections).includes("SponsoredData")) {
+      nodes.push(node);
+    }
   }
 
   for (const item of items) {
@@ -98,28 +99,28 @@ function extractAd(node) {
     const contextStory = sections.context_layout?.story || {};
 
     // ── Advertiser ───────────────────────────────────────────────────────────
-    // actors is usually on context_layout.story or content.story
     const actors = deepGet(contextStory, "actors") || deepGet(contentStory, "actors") || [];
     const actor = Array.isArray(actors) ? actors[0] : null;
     const pageName = actor?.name || deepGet(node, "name") || "";
-    // page_profile.id é o ID público da página (usado no Ad Library)
-    // actor.id pode ser um ID interno de conta de negócio
     const pageProfile = deepGet(node, "page_profile") || deepGet(contentStory, "page_profile") || deepGet(contextStory, "page_profile") || {};
     const pageId = pageProfile.id || actor?.id || "";
+    const pageLogo = pageId ? `https://graph.facebook.com/${pageId}/picture?type=square` : "";
 
     // ── Ad Library ID ────────────────────────────────────────────────────────
     const adLibraryId =
+      deepGet(node, "ad_id") ||
       deepGet(node, "adLibraryId") ||
       deepGet(node, "ad_archive_id") ||
       deepGet(node, "adArchiveId") ||
+      deepGet(sections, "ad_id") ||
       deepGet(sections, "adLibraryId") ||
       deepGet(sections, "ad_archive_id") ||
+      deepGet(contentStory, "ad_id") ||
       deepGet(contentStory, "adLibraryId") ||
       deepGet(contentStory, "ad_archive_id") ||
       "";
 
     // ── Copy text ────────────────────────────────────────────────────────────
-    // message.text is the main copy; collect all text strings and pick longest
     const allTexts = deepGetAll(contentStory, "text")
       .filter(t => typeof t === "string" && t.length > 5)
       .sort((a, b) => b.length - a.length);
@@ -149,7 +150,6 @@ function extractAd(node) {
     const imageUri = photoImages.find(p => p?.uri)?.uri || "";
 
     // ── Video ─────────────────────────────────────────────────────────────────
-    // Search the entire node tree with increased depth for video URLs
     const videoUrl =
       deepGet(node, "playable_url_quality_hd", 20) ||
       deepGet(node, "playable_url", 20) ||
@@ -185,6 +185,7 @@ function extractAd(node) {
       id: uniqueId,
       advertiser: pageName || "Desconhecido",
       pageId,
+      pageLogo,
       adLibraryId,
       copy: postText,
       linkTitle: fouterTitle,
@@ -216,7 +217,6 @@ async function sendToHub(ads) {
     const { hubToken } = await chrome.storage.sync.get(["hubToken"]);
     const token = hubToken || "no-auth";
 
-    // Roteia pelo background service worker (sem restrição CORS)
     chrome.runtime.sendMessage(
       { type: "SEND_TO_HUB", hubUrl, token, ads },
       (response) => {
@@ -245,7 +245,6 @@ function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds 
     const sponsoredNodes = findSponsoredNodes(items);
     if (sponsoredNodes.length === 0) return;
 
-    // Track which raw video URLs have been assigned so we don't reuse them
     const availableVideos = [...rawVideoUrls];
     const availableAdLibIds = [...rawAdLibIds];
     const availablePageIds = [...rawPageIds];
@@ -254,16 +253,17 @@ function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds 
       .map(node => {
         const ad = extractAd(node);
         if (!ad) return null;
-        // If deepGet found nothing, try raw CDN URLs extracted from text
         if (!ad.videoUrl && availableVideos.length > 0) {
           ad.videoUrl = availableVideos.shift();
           console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
         }
         if (!ad.adLibraryId && availableAdLibIds.length > 0) {
           ad.adLibraryId = availableAdLibIds.shift();
+          console.log("[OfferHub] 📚 adLibraryId via raw:", ad.advertiser, ad.adLibraryId);
         }
         if (!ad.pageId && availablePageIds.length > 0) {
           ad.pageId = availablePageIds.shift();
+          console.log("[OfferHub] 🏷️ pageId via raw:", ad.advertiser, ad.pageId);
         }
         return ad;
       })
