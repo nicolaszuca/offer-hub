@@ -2,6 +2,11 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
+
+// ─── VIDEOS DIR ───────────────────────────────────────────────────────────────
+const VIDEOS_DIR = path.join(__dirname, 'public', 'videos');
+if (!fs.existsSync(VIDEOS_DIR)) fs.mkdirSync(VIDEOS_DIR, { recursive: true });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -69,17 +74,52 @@ app.get('/api/queue', auth, (req, res) => {
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id })));
 });
 
-app.post('/api/queue', auth, (req, res) => {
+// ─── VIDEO DOWNLOAD ───────────────────────────────────────────────────────────
+async function downloadVideo(url, id) {
+  try {
+    const filePath = path.join(VIDEOS_DIR, `${id}.mp4`);
+    if (fs.existsSync(filePath)) return `/videos/${id}.mp4`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+    });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    fs.writeFileSync(filePath, Buffer.from(buf));
+    console.log(`[video] Salvo: ${id}.mp4 (${Math.round(buf.byteLength/1024)}KB)`);
+    return `/videos/${id}.mp4`;
+  } catch (e) {
+    console.warn(`[video] Erro ao baixar ${id}:`, e.message);
+    return null;
+  }
+}
+
+app.post('/api/queue', auth, async (req, res) => {
   const ads = Array.isArray(req.body) ? req.body : [req.body];
   const insert = db.prepare('INSERT OR IGNORE INTO queue (id, data) VALUES (?, ?)');
-  const insertMany = db.transaction((items) => {
-    for (const ad of items) {
-      if (!ad.id) ad.id = crypto.randomUUID();
-      insert.run(ad.id, JSON.stringify(ad));
-    }
+
+  // Responde imediatamente, baixa vídeos em background
+  const prepared = ads.map(ad => {
+    if (!ad.id) ad.id = crypto.randomUUID();
+    return ad;
   });
-  insertMany(ads);
-  res.json({ ok: true, count: ads.length });
+
+  const insertMany = db.transaction((items) => {
+    for (const ad of items) insert.run(ad.id, JSON.stringify(ad));
+  });
+  insertMany(prepared);
+  res.json({ ok: true, count: prepared.length });
+
+  // Download de vídeos em background (não bloqueia resposta)
+  for (const ad of prepared) {
+    if (ad.videoUrl && !ad.videoUrl.startsWith('/videos/')) {
+      downloadVideo(ad.videoUrl, ad.id).then(localPath => {
+        if (localPath) {
+          ad.videoUrl = localPath;
+          db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+        }
+      });
+    }
+  }
 });
 
 app.delete('/api/queue/:id', auth, (req, res) => {
