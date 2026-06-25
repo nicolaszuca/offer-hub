@@ -210,11 +210,11 @@ async function sendToHub(ads) {
   const token = hubToken || "no-auth";
 
   // Roteia pelo background service worker (sem restrição CORS)
-  chrome.runtime.sendMessage(
+  try { chrome.runtime.sendMessage(
     { type: "SEND_TO_HUB", hubUrl, token, ads },
     (response) => {
       if (chrome.runtime.lastError) {
-        console.warn("[OfferHub] Erro no background:", chrome.runtime.lastError.message);
+        // Contexto invalidado = extensão foi recarregada; ignorar silenciosamente
         return;
       }
       if (response?.ok) {
@@ -226,7 +226,7 @@ async function sendToHub(ads) {
         console.warn("[OfferHub] Erro ao enviar:", response?.error);
       }
     }
-  );
+  ); } catch(e) { /* extensão recarregada, ignorar */ }
 }
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
