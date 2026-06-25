@@ -113,7 +113,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
 <nav class="topnav">
   <div class="nav-logo">Offer<span>Hub</span></div>
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('queue')" id="tab-queue">&#128442; Fila</button>
+    <button class="tab-btn active" onclick="switchTab('queue')" id="tab-queue">&#128706; Fila</button>
     <button class="tab-btn" onclick="switchTab('saved')" id="tab-saved">&#11088; Salvos</button>
   </div>
   <div class="nav-right">
@@ -203,6 +203,12 @@ function toast(msg,dur){
   setTimeout(function(){ t.classList.remove('show'); }, dur);
 }
 
+function imgFail(img){
+  img.style.display='none';
+  var p=img.parentElement;
+  if(p){ p.textContent=p.dataset.initials||'?'; }
+}
+
 function toggleTheme(){
   document.body.classList.toggle('dark');
   localStorage.setItem('theme', document.body.classList.contains('dark')?'dark':'light');
@@ -239,149 +245,22 @@ function applyFilters(ads){
   return list;
 }
 
-function buildCard(ad) {
-  var isQ = S.tab === 'queue';
-  var id = ad.id || '';
-  var copy = ad.copy || '';
-  var isLong = copy.length > 180;
-  var name = ad.advertiser || 'Desconhecido';
-  var initials = name.split(' ').slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase() || '?';
-
-  var avatarInner = initials;
-  if(ad.pageLogo){
-    avatarInner = '<img src="'+e(ad.pageLogo)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentElement.textContent=''+initials+''" alt="">';
-  }
-
-  var media = '';
-  if(ad.videoUrl){
-    media = '<div class="card-media"><video src="'+e(ad.videoUrl)+'" poster="'+e(ad.imageUrl||'')+'" controls preload="none"></video></div>';
-  } else if(ad.imageUrl){
-    media = '<div class="card-media"><img src="'+e(ad.imageUrl)+'" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>';
-  }
-
-  var link = '';
-  if(ad.linkTitle || ad.linkDesc || (ad.snapshotUrl && ad.snapshotUrl.indexOf('facebook.com/ads/library')<0)){
-    var domain = '';
-    try{ domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); }catch(ex){}
-    var ctaLabel = ad.ctaText || 'Saiba mais';
-    link = '<div class="card-link">'+
-      '<div class="link-left">'+
-      (domain?'<div class="link-domain">'+e(domain)+'</div>':'')+
-      (ad.linkTitle?'<div class="link-title">'+e(ad.linkTitle)+'</div>':'')+
-      (ad.linkDesc?'<div class="link-desc">'+e(ad.linkDesc)+'</div>':'')+
-      '</div>'+
-      (ctaLabel?'<div class="link-cta">'+e(ctaLabel)+'</div>':'')+
-      '</div>';
-  }
-
-  var adlibBtn = ad.adLibraryId
-    ? '<a class="adlib-btn" href="https://www.facebook.com/ads/library/?id='+e(ad.adLibraryId)+'" target="_blank">Ad Library</a>'
-    : '';
-
-  var actionIcons =
-    (ad.videoUrl?'<button class="icon-btn" onclick="openVid(''+e(ad.videoUrl)+'')" title="Ver video">play</button>':'')+
-    '<button class="icon-btn" onclick="openAI(''+e(id)+'')" title="Analisar com IA">IA</button>'+
-    (isQ
-      ? '<button class="save-btn" onclick="saveAd(''+e(id)+'')" id="save-'+e(id)+'">Salvar</button>'
-      : '<button class="delete-btn" onclick="deleteAd(''+e(id)+'')">Del</button>'
-    );
-
-  var copyHtml = copy
-    ? '<div class="card-copy'+(isLong?' truncated':'')+'" id="copy-'+e(id)+'">'+e(copy)+'</div>'+(isLong?'<button class="see-more" onclick="toggleCopy(''+e(id)+'')">Ver mais</button>':'')
-    : '';
-
-  var platforms = (ad.platforms||['facebook']).map(function(p){ return '<span class="platform-tag">'+e(p)+'</span>'; }).join('');
-
-  return '<div class="hub-card" id="card-'+e(id)+'">'+
-    '<div class="card-head">'+
-    '<div class="card-avatar">'+avatarInner+'</div>'+
-    '<div class="card-meta">'+
-    '<div class="card-name" title="'+e(name)+'">'+e(name)+'</div>'+
-    '<div class="card-sub">Patrocinado &middot; '+e(ad.addedAt||ad.createdAt||'')+'</div>'+
-    '</div>'+
-    '<div class="card-actions">'+adlibBtn+actionIcons+'</div>'+
-    '</div>'+
-    copyHtml+media+link+
-    '<div class="card-foot">'+platforms+'<span class="card-date">'+e(ad.addedAt||ad.createdAt||'')+'</span></div>'+
-    '</div>';
-}
-
-function toggleCopy(id){
-  var el=document.getElementById('copy-'+id);
-  var btn=el.nextElementSibling;
-  if(el.classList.toggle('truncated')){ btn.textContent='Ver mais'; }
-  else{ btn.textContent='Ver menos'; }
-}
-
-function renderGrid(){
-  var grid=document.getElementById('ads-grid');
-  var badge=document.getElementById('count-badge');
-  var items=applyFilters(S.tab==='queue'?S.queueAds:S.savedAds);
-  badge.textContent=S.tab==='queue'?S.queueAds.length:S.savedAds.length;
-  if(items.length===0){
-    grid.innerHTML='<div class="empty" style="grid-column:1/-1">'+
-      '<div class="icon">'+(S.tab==='queue'?'📥':'⭐')+'</div>'+
-      '<h3>'+(S.tab==='queue'?'Fila vazia':'Nenhum anuncio salvo')+'</h3>'+
-      '<p>'+(S.tab==='queue'?'A extensao vai capturar anuncios automaticamente.':'Salve ads da fila para analisar com IA.')+'</p>'+
-      '</div>';
-    return;
-  }
-  grid.innerHTML=items.map(function(ad){ return buildCard(ad); }).join('');
-}
-
-async function loadQueue(){
-  try{
-    var r=await fetch('/api/queue');
-    S.queueAds=await r.json();
-    renderGrid();
-  }catch(err){ console.error('Queue load error:',err); }
-}
-async function loadSaved(){
-  try{
-    var r=await fetch('/api/saved');
-    S.savedAds=await r.json();
-  }catch(err){ console.error('Saved load error:',err); }
-}
-
-async function saveAd(id){
-  var ad=S.queueAds.find(function(a){ return a.id===id; });
-  if(!ad) return;
-  try{
-    var r=await fetch('/api/saved',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer no-auth'},body:JSON.stringify(ad)});
-    if(r.ok){
-      var btn=document.getElementById('save-'+id);
-      if(btn){ btn.textContent='Salvo'; btn.classList.add('saved'); btn.disabled=true; }
-      toast('Anuncio salvo!');
-      S.savedAds.push(ad);
-    }
-  }catch(err){ toast('Erro ao salvar'); }
-}
-async function deleteAd(id){
-  try{
-    await fetch('/api/saved/'+id,{method:'DELETE',headers:{'Authorization':'Bearer no-auth'}});
-    S.savedAds=S.savedAds.filter(function(a){ return a.id!==id; });
-    var card=document.getElementById('card-'+id);
-    if(card) card.remove();
-    toast('Removido');
-  }catch(err){ toast('Erro ao remover'); }
-}
-
 function openVid(url){
-  document.getElementById('vid-player').src=url;
+  var p=document.getElementById('vid-player');
+  p.src=url; p.play();
   document.getElementById('vid-overlay').classList.add('open');
 }
 function closeVid(ev){
   if(ev&&ev.target!==document.getElementById('vid-overlay')) return;
+  document.getElementById('vid-player').pause();
   document.getElementById('vid-overlay').classList.remove('open');
-  document.getElementById('vid-player').src='';
 }
 
-function openAI(id){
-  var ad=S.queueAds.find(function(a){ return a.id===id; })||S.savedAds.find(function(a){ return a.id===id; });
-  if(!ad) return;
+function openAI(ad){
   S.currentAI=ad; S.aiMessages=[];
-  document.getElementById('ai-title').textContent='IA - '+ad.advertiser;
-  document.getElementById('ai-body').innerHTML='<div class="ai-loading">Analisando...</div>';
+  document.getElementById('ai-title').textContent=ad.advertiser||'Anuncio';
+  var body=document.getElementById('ai-body');
+  body.innerHTML='<div class="ai-loading">Analisando anuncio...</div>';
   document.getElementById('ai-overlay').classList.add('open');
   analyzeAd(ad);
 }
@@ -389,67 +268,43 @@ function closeAI(ev){
   if(ev&&ev.target!==document.getElementById('ai-overlay')) return;
   document.getElementById('ai-overlay').classList.remove('open');
 }
-
 async function analyzeAd(ad){
-  var prompt='Analise este anuncio do Facebook:
-
-Anunciante: '+ad.advertiser+'
-Texto: '+(ad.copy||'(sem texto)')+'
-Titulo: '+(ad.linkTitle||'')+'
-Descricao: '+(ad.linkDesc||'')+'
-Tipo: '+(ad.videoUrl?'Video':'Imagem')+'
-
-Responda em portugues:
-1. **Gancho**: qual e o gancho principal?
-2. **Oferta**: o que esta sendo oferecido?
-3. **Publico**: para quem parece ser?
-4. **Pontos fortes**: 2-3 elementos que funcionam bem
-5. **Nota geral**: /10';
   try{
-    var r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer no-auth'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
-    var data=await r.json();
-    var reply=(data.reply||data.content||(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'Erro ao analisar');
-    S.aiMessages=[{role:'assistant',content:reply}];
-    renderAIBody();
-  }catch(err){
-    document.getElementById('ai-body').innerHTML='<div class="ai-msg assistant">Erro: '+err.message+'</div>';
-  }
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    var r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({ad:ad})});
+    var d=await r.json();
+    var body=document.getElementById('ai-body');
+    if(d.analysis){
+      S.aiMessages=[{role:'assistant',content:d.analysis}];
+      renderAIMessages();
+      if(S.tab==='saved'){
+        var t=localStorage.getItem('hubToken')||'no-auth';
+        fetch('/api/saved/'+ad.id,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({analysis:d.analysis})});
+      }
+    } else { body.innerHTML='<p style="color:var(--red)">Erro: '+(d.error||'Falha na analise')+'</p>'; }
+  }catch(err){ document.getElementById('ai-body').innerHTML='<p style="color:var(--red)">Erro: '+err.message+'</p>'; }
 }
-
-async function sendAIMsg(){
-  var input=document.getElementById('ai-input');
-  var msg=input.value.trim();
-  if(!msg||!S.currentAI) return;
-  input.value='';
-  var ad=S.currentAI;
-  S.aiMessages.push({role:'user',content:msg});
-  var context='Contexto - Anunciante: '+ad.advertiser+', Texto: '+(ad.copy||'');
-  var first=S.aiMessages[0]?S.aiMessages[0].content:'';
-  var msgs=[{role:'user',content:context+'
-
-'+first}].concat(S.aiMessages.slice(1)).concat([{role:'user',content:msg}]);
-  S.aiMessages.push({role:'assistant',content:'...'});
-  renderAIBody();
-  try{
-    var r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer no-auth'},body:JSON.stringify({messages:msgs})});
-    var data=await r.json();
-    var reply=(data.reply||data.content||(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'?');
-    S.aiMessages[S.aiMessages.length-1]={role:'assistant',content:reply};
-    renderAIBody();
-  }catch(err){
-    S.aiMessages[S.aiMessages.length-1]={role:'assistant',content:'Erro: '+err.message};
-    renderAIBody();
-  }
-}
-
-function renderAIBody(){
+function renderAIMessages(){
   var body=document.getElementById('ai-body');
   body.innerHTML=S.aiMessages.map(function(m){
-    var html=m.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/
-/g,'<br>').replace(/**(.*?)**/g,'<strong>$1</strong>');
-    return '<div class="ai-msg '+m.role+'">'+html+'</div>';
+    return '<div class="ai-msg '+m.role+'">'+e(m.content)+'</div>';
   }).join('');
   body.scrollTop=body.scrollHeight;
+}
+async function sendAIMsg(){
+  var inp=document.getElementById('ai-input');
+  var msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  S.aiMessages.push({role:'user',content:msg});
+  renderAIMessages();
+  try{
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    var ad=S.currentAI;
+    var fullPrompt='Contexto do anuncio:\nAnunciante: '+ad.advertiser+'\nCopy: '+ad.copy+'\n\nPergunta: '+msg;
+    var r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({ad:{...ad,copy:fullPrompt}})});
+    var d=await r.json();
+    if(d.analysis){ S.aiMessages.push({role:'assistant',content:d.analysis}); renderAIMessages(); }
+  }catch(err){ S.aiMessages.push({role:'assistant',content:'Erro: '+err.message}); renderAIMessages(); }
 }
 
 function openImport(){
@@ -466,8 +321,8 @@ async function submitImport(){
   var adLibraryId='';
   try{
     var u=new URL(urlVal.indexOf('facebook.com')>=0?urlVal:'https://x.com/?id='+urlVal);
-    adLibraryId=u.searchParams.get('id')||urlVal.replace(/D/g,'').slice(0,20)||urlVal;
-  }catch(ex){ adLibraryId=urlVal.replace(/D/g,'').slice(0,20)||urlVal; }
+    adLibraryId=u.searchParams.get('id')||urlVal.replace(/\D/g,'').slice(0,20)||urlVal;
+  }catch(ex){ adLibraryId=urlVal.replace(/\D/g,'').slice(0,20)||urlVal; }
   var name=document.getElementById('import-name').value.trim()||'Desconhecido';
   var copy=document.getElementById('import-copy').value.trim();
   var today=new Date();
@@ -483,7 +338,8 @@ async function submitImport(){
     source:'manual'
   };
   try{
-    var r=await fetch('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer no-auth'},body:JSON.stringify(ad)});
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    var r=await fetch('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(ad)});
     if(r.ok){
       S.queueAds.unshift(ad);
       renderGrid();
@@ -496,10 +352,131 @@ async function submitImport(){
   }catch(err){ toast('Erro: '+err.message); }
 }
 
-async function checkAuth(){
-  await Promise.all([loadQueue(), loadSaved()]);
+function buildCard(ad, isQueue){
+  var initials=(ad.advertiser||'?').split(' ').slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase()||'?';
+  var avatarInner=initials;
+  if(ad.pageLogo){
+    avatarInner='<img src="'+e(ad.pageLogo)+'" style="width:100%;height:100%;object-fit:cover" onerror="imgFail(this)" alt="">';
+  }
+  var mediaHtml='';
+  if(ad.videoUrl){
+    mediaHtml='<div class="card-media"><video src="'+e(ad.videoUrl)+'" poster="'+e(ad.imageUrl||'')+'" onclick="openVid(\''+e(ad.videoUrl)+'\')" style="cursor:pointer"></video></div>';
+  } else if(ad.imageUrl){
+    mediaHtml='<div class="card-media"><img src="'+e(ad.imageUrl)+'" alt="" loading="lazy"></div>';
+  }
+  var copyHtml='';
+  if(ad.copy){
+    var copyId='copy-'+ad.id;
+    copyHtml='<div class="card-copy truncated" id="'+copyId+'">'+e(ad.copy)+'</div><button class="see-more" onclick="toggleCopy(\''+copyId+'\',this)">Ver mais</button>';
+  }
+  var linkHtml='';
+  if(ad.linkTitle||ad.linkDesc){
+    var domain='';
+    if(ad.snapshotUrl){ try{ domain=new URL(ad.snapshotUrl).hostname.replace('www.',''); }catch(x){} }
+    linkHtml='<div class="card-link" onclick="window.open(\''+e(ad.snapshotUrl||'#')+'\',\'_blank\')"><div class="link-left"><div class="link-domain">'+e(domain)+'</div><div class="link-title">'+e(ad.linkTitle||'')+'</div><div class="link-desc">'+e(ad.linkDesc||'')+'</div></div><div class="link-cta">Saiba mais</div></div>';
+  }
+  var platforms=(ad.platforms||['facebook']).map(function(p){ return '<span class="platform-tag">'+e(p)+'</span>'; }).join('');
+  var footBtns='';
+  if(isQueue){
+    footBtns='<button class="save-btn" onclick="saveAd(\''+ad.id+'\',this)">Salvar</button>';
+  } else {
+    footBtns='<button class="delete-btn" onclick="deleteAd(\''+ad.id+'\',this)">Remover</button>';
+  }
+  var adlibBtn='';
+  if(ad.snapshotUrl){
+    adlibBtn='<a class="adlib-btn" href="'+e(ad.snapshotUrl)+'" target="_blank">Ad Library</a>';
+  }
+  var aiBtn='<button class="icon-btn" onclick="openAI(getAd(\''+ad.id+'\'))">&#129302;</button>';
+  return '<div class="hub-card" id="card-'+ad.id+'">'
+    +'<div class="card-head">'
+    +'<div class="card-avatar" data-initials="'+initials+'">'+avatarInner+'</div>'
+    +'<div class="card-meta"><div class="card-name">'+e(ad.advertiser||'Desconhecido')+'</div><div class="card-sub">'+e(ad.addedAt||ad.createdAt||'')+(ad.source==='manual'?' &middot; manual':'')+'</div></div>'
+    +'<div class="card-actions">'+adlibBtn+aiBtn+'</div>'
+    +'</div>'
+    +mediaHtml
+    +copyHtml
+    +linkHtml
+    +'<div class="card-foot">'+platforms+'<span class="card-date">'+e(ad.addedAt||ad.createdAt||'')+'</span>'+footBtns+'</div>'
+    +'</div>';
 }
-checkAuth();
+
+function getAd(id){
+  return S.queueAds.find(function(a){ return a.id===id; }) || S.savedAds.find(function(a){ return a.id===id; }) || {id:id};
+}
+
+function toggleCopy(id,btn){
+  var el=document.getElementById(id);
+  if(!el) return;
+  if(el.classList.contains('truncated')){
+    el.classList.remove('truncated');
+    btn.textContent='Ver menos';
+  } else {
+    el.classList.add('truncated');
+    btn.textContent='Ver mais';
+  }
+}
+
+function renderGrid(){
+  var ads=S.tab==='queue'?S.queueAds:S.savedAds;
+  var filtered=applyFilters(ads);
+  var grid=document.getElementById('ads-grid');
+  var badge=document.getElementById('count-badge');
+  badge.textContent=filtered.length;
+  if(filtered.length===0){
+    var msg=S.tab==='queue'?'Nenhum anuncio na fila. Navegue no Facebook com a extensao ativada ou adicione manualmente com o botao +.':'Nenhum anuncio salvo ainda. Salve anuncios da fila para referencia futura.';
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="icon">&#128270;</div><h3>Nada por aqui</h3><p>'+msg+'</p></div>';
+    return;
+  }
+  var isQueue=S.tab==='queue';
+  grid.innerHTML=filtered.map(function(ad){ return buildCard(ad,isQueue); }).join('');
+}
+
+async function saveAd(id,btn){
+  var ad=getAd(id);
+  btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    var r=await fetch('/api/saved',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(ad)});
+    if(r.ok){
+      if(!S.savedAds.find(function(a){ return a.id===id; })) S.savedAds.unshift(ad);
+      btn.classList.add('saved'); btn.textContent='Salvo';
+      toast('Salvo!');
+    } else { btn.disabled=false; btn.textContent='Salvar'; toast('Erro ao salvar'); }
+  }catch(err){ btn.disabled=false; btn.textContent='Salvar'; toast('Erro: '+err.message); }
+}
+
+async function deleteAd(id,btn){
+  var endpoint=S.tab==='queue'?'/api/queue/':'/api/saved/';
+  try{
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    await fetch(endpoint+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    if(S.tab==='queue') S.queueAds=S.queueAds.filter(function(a){ return a.id!==id; });
+    else S.savedAds=S.savedAds.filter(function(a){ return a.id!==id; });
+    renderGrid();
+    toast('Removido');
+  }catch(err){ toast('Erro: '+err.message); }
+}
+
+async function loadAds(){
+  try{
+    var token=localStorage.getItem('hubToken')||'no-auth';
+    var headers={'Authorization':'Bearer '+token};
+    var r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:''})});
+    var d=await r.json();
+    if(d.token){ token=d.token; localStorage.setItem('hubToken',token); }
+  }catch(e){}
+  try{
+    var token2=localStorage.getItem('hubToken')||'no-auth';
+    var h={'Authorization':'Bearer '+token2};
+    var qr=await fetch('/api/queue',{headers:h});
+    S.queueAds=await qr.json();
+    var sr=await fetch('/api/saved',{headers:h});
+    S.savedAds=await sr.json();
+    renderGrid();
+  }catch(err){ console.error('Load error:',err); }
+}
+
+loadAds();
 </script>
 </body>
 </html>
