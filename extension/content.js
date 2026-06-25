@@ -20,7 +20,7 @@ chrome.storage.onChanged.addListener((changes) => {
 // ─── LISTEN FOR XHR PAYLOADS ──────────────────────────────────────────────────
 window.addEventListener("message", (event) => {
   if (!event.data || event.data.type !== MSG_ID) return;
-  handlePayload(event.data.payload);
+  handlePayload(event.data.payload, event.data.videoUrls || []);
 });
 
 // ─── PARSE NDJSON ─────────────────────────────────────────────────────────────
@@ -232,14 +232,26 @@ async function sendToHub(ads) {
 }
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
-function handlePayload(payload) {
+function handlePayload(payload, rawVideoUrls = []) {
   try {
     const items = parseNDJSON(payload);
     const sponsoredNodes = findSponsoredNodes(items);
     if (sponsoredNodes.length === 0) return;
 
+    // Track which raw video URLs have been assigned so we don't reuse them
+    const availableVideos = [...rawVideoUrls];
+
     const ads = sponsoredNodes
-      .map(extractAd)
+      .map(node => {
+        const ad = extractAd(node);
+        if (!ad) return null;
+        // If deepGet found nothing, try raw CDN URLs extracted from text
+        if (!ad.videoUrl && availableVideos.length > 0) {
+          ad.videoUrl = availableVideos.shift();
+          console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
+        }
+        return ad;
+      })
       .filter(Boolean)
       .filter(ad => {
         if (seenIds.has(ad.id)) return false;
