@@ -20,7 +20,7 @@ chrome.storage.onChanged.addListener((changes) => {
 // ─── LISTEN FOR XHR PAYLOADS ──────────────────────────────────────────────────
 window.addEventListener("message", (event) => {
   if (!event.data || event.data.type !== MSG_ID) return;
-  handlePayload(event.data.payload, event.data.videoUrls || []);
+  handlePayload(event.data.payload, event.data.videoUrls || [], event.data.adLibIds || [], event.data.pageIds || []);
 });
 
 // ─── PARSE NDJSON ─────────────────────────────────────────────────────────────
@@ -239,7 +239,7 @@ async function sendToHub(ads) {
 }
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
-function handlePayload(payload, rawVideoUrls = []) {
+function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds = []) {
   try {
     const items = parseNDJSON(payload);
     const sponsoredNodes = findSponsoredNodes(items);
@@ -247,6 +247,8 @@ function handlePayload(payload, rawVideoUrls = []) {
 
     // Track which raw video URLs have been assigned so we don't reuse them
     const availableVideos = [...rawVideoUrls];
+    const availableAdLibIds = [...rawAdLibIds];
+    const availablePageIds = [...rawPageIds];
 
     const ads = sponsoredNodes
       .map(node => {
@@ -256,6 +258,12 @@ function handlePayload(payload, rawVideoUrls = []) {
         if (!ad.videoUrl && availableVideos.length > 0) {
           ad.videoUrl = availableVideos.shift();
           console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
+        }
+        if (!ad.adLibraryId && availableAdLibIds.length > 0) {
+          ad.adLibraryId = availableAdLibIds.shift();
+        }
+        if (!ad.pageId && availablePageIds.length > 0) {
+          ad.pageId = availablePageIds.shift();
         }
         return ad;
       })
