@@ -102,7 +102,10 @@ function extractAd(node) {
     const actors = deepGet(contextStory, "actors") || deepGet(contentStory, "actors") || [];
     const actor = Array.isArray(actors) ? actors[0] : null;
     const pageName = actor?.name || deepGet(node, "name") || "";
-    const pageId = actor?.id || deepGet(node, "id") || "";
+    // page_profile.id é o ID público da página (usado no Ad Library)
+    // actor.id pode ser um ID interno de conta de negócio
+    const pageProfile = deepGet(node, "page_profile") || deepGet(contentStory, "page_profile") || deepGet(contextStory, "page_profile") || {};
+    const pageId = pageProfile.id || actor?.id || "";
 
     // ── Ad Library ID ────────────────────────────────────────────────────────
     const adLibraryId =
