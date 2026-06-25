@@ -139,6 +139,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
   .grid{grid-template-columns:1fr}
   .grid-wrap{padding:12px 10px}
 }
+
+.import-label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:14px}
+.import-input{width:100%;margin-top:5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;display:block;resize:vertical}
+.import-input:focus{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -156,7 +160,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
       <input type="text" placeholder="Buscar anúncios..." id="search-input" oninput="onSearch(this.value)">
     </div>
     <span class="count-badge" id="count-badge">0</span>
-    <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema">🌙</button>
+    <button class="theme-btn" onclick="openImport()" title="Adicionar manualmente" style="font-size:18px">➕</button>
+  <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema">🌙</button>
   </div>
 </nav>
 
@@ -199,6 +204,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
   <div class="vid-panel">
     <button class="vid-close" onclick="closeVid()">×</button>
     <video id="vid-player" controls playsinline></video>
+  </div>
+</div>
+
+
+<!-- IMPORT MODAL -->
+<div class="ai-overlay" id="import-overlay" onclick="closeImport(event)">
+  <div class="ai-panel" style="max-width:460px">
+    <div class="ai-head">
+      <span style="font-size:22px">➕</span>
+      <h3>Adicionar Anúncio</h3>
+      <button class="ai-close" onclick="closeImport()">×</button>
+    </div>
+    <div class="ai-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Cole o link do Ad Library. Os outros campos são opcionais.</p>
+      <label class="import-label">URL do Ad Library *
+        <input type="text" id="import-url" class="import-input" placeholder="https://www.facebook.com/ads/library/?id=...">
+      </label>
+      <label class="import-label">Nome do anunciante
+        <input type="text" id="import-name" class="import-input" placeholder="Ex: Nubank, iFood...">
+      </label>
+      <label class="import-label">Texto do anúncio
+        <textarea id="import-copy" class="import-input" rows="3" placeholder="Cole o texto aqui..."></textarea>
+      </label>
+    </div>
+    <div class="ai-foot">
+      <button class="ai-send" onclick="submitImport()">➕ Adicionar à fila</button>
+    </div>
   </div>
 </div>
 
@@ -501,6 +533,49 @@ function renderAIBody(){
 async function checkAuth(){
   // No auth required (token = no-auth)
   await Promise.all([loadQueue(), loadSaved()]);
+}
+
+
+// ─── IMPORT MANUAL ────────────────────────────────────────────────────────────
+function openImport(){
+  document.getElementById('import-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('import-url').focus(),100);
+}
+function closeImport(ev){
+  if(ev&&ev.target!==document.getElementById('import-overlay'))return;
+  document.getElementById('import-overlay').classList.remove('open');
+}
+async function submitImport(){
+  const urlVal=document.getElementById('import-url').value.trim();
+  if(!urlVal){toast('⚠️ Cole a URL do Ad Library');return;}
+  let adLibraryId='';
+  try{
+    const u=new URL(urlVal.includes('facebook.com')?urlVal:'https://x.com/?id='+urlVal);
+    adLibraryId=u.searchParams.get('id')||urlVal.replace(/\D/g,'').slice(0,20)||urlVal;
+  }catch{adLibraryId=urlVal.replace(/\D/g,'').slice(0,20)||urlVal;}
+  const name=document.getElementById('import-name').value.trim()||'Desconhecido';
+  const copy=document.getElementById('import-copy').value.trim();
+  const ad={
+    id:'fb_'+adLibraryId,
+    advertiser:name,
+    adLibraryId,
+    copy,
+    snapshotUrl:`https://www.facebook.com/ads/library/?id=${adLibraryId}`,
+    platforms:['facebook'],
+    createdAt:new Date().toISOString().split('T')[0],
+    addedAt:new Date().toLocaleDateString('pt-BR'),
+    source:'manual',
+  };
+  try{
+    const r=await fetch('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer no-auth'},body:JSON.stringify(ad)});
+    if(r.ok){
+      S.queueAds.unshift(ad);
+      renderGrid();
+      closeImport();
+      ['import-url','import-name','import-copy'].forEach(id=>document.getElementById(id).value='');
+      toast('✅ Anúncio adicionado à fila!');
+    }else{toast('Erro ao adicionar');}
+  }catch(err){toast('Erro: '+err.message);}
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
