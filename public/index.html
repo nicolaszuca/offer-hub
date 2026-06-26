@@ -448,7 +448,7 @@ function getFiltered() {
   );
 }
 
-// ── RENDER ───────────────────────────────────────────────────────────────
+// ── RENDER ───────────────────────────────────────────────────────────────────
 function renderGrid() {
   const filtered = getFiltered();
   const total = filtered.length;
@@ -485,12 +485,13 @@ function buildCard(ad) {
   const name = ad.advertiser || 'Desconhecido';
   const initials = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
 
-  // Media
+  // Media — usa localImageUrl (cache local) ou imageUrl (URL original do Facebook) como fallback
+  const thumbSrc = ad.localImageUrl || (ad.imageUrl?.startsWith('http') ? ad.imageUrl : '');
   let media = '';
   if (ad.videoUrl) {
-    media = `<div class="card-media"><video src="${e(ad.videoUrl)}" poster="${e(ad.imageUrl||'')}" controls preload="none"></video></div>`;
-  } else if (ad.imageUrl) {
-    media = `<div class="card-media"><img src="${e(ad.imageUrl)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
+    media = `<div class="card-media"><video src="${e(ad.videoUrl)}"${thumbSrc ? ` poster="${e(thumbSrc)}"` : ''} controls preload="none"></video></div>`;
+  } else if (thumbSrc) {
+    media = `<div class="card-media"><img src="${e(thumbSrc)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
   // Link card — só mostra quando há conteúdo real (linkDesc) ou URL externa
