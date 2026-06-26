@@ -19,6 +19,28 @@ const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
 // ─── DATABASE ─────────────────────────────────────────────────────────────────
 const db = new Database(process.env.DB_PATH || 'hub.db');
 
+// Migração: ads que têm /images/... em imageUrl → move para localImageUrl e limpa imageUrl
+function migrateImageUrls() {
+  const tables = ['queue', 'saved'];
+  for (const table of tables) {
+    const rows = db.prepare(`SELECT id, data FROM ${table}`).all();
+    const upd = db.prepare(`UPDATE ${table} SET data = ? WHERE id = ?`);
+    for (const row of rows) {
+      try {
+        const ad = JSON.parse(row.data);
+        let changed = false;
+        if (ad.imageUrl?.startsWith('/images/')) {
+          ad.localImageUrl = ad.imageUrl;
+          ad.imageUrl = '';
+          changed = true;
+        }
+        if (changed) upd.run(JSON.stringify(ad), row.id);
+      } catch (_) {}
+    }
+  }
+}
+migrateImageUrls();
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS queue (
     id TEXT PRIMARY KEY,
@@ -61,6 +83,36 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/videos', express.static(VIDEOS_DIR));
+
+// Serve imagens — se arquivo local sumir (redeploy), tenta re-baixar da URL original
+app.use('/images', async (req, res, next) => {
+  const filePath = path.join(IMAGES_DIR, req.path);
+  if (fs.existsSync(filePath)) return next(); // arquivo existe, serve normalmente
+  // Tentar re-baixar: busca o ad pelo id (nome do arquivo sem extensão)
+  const id = path.basename(req.path, path.extname(req.path));
+  const row = db.prepare(
+    'SELECT data FROM queue WHERE id = ? UNION ALL SELECT data FROM saved WHERE id = ? LIMIT 1'
+  ).get(id, id);
+  if (row) {
+    try {
+      const ad = JSON.parse(row.data);
+      const origUrl = ad.imageUrl?.startsWith('http') ? ad.imageUrl : null;
+      if (origUrl) {
+        const localPath = await downloadImage(origUrl, id);
+        if (localPath) {
+          // Atualiza DB com localImageUrl
+          const upQ = db.prepare('UPDATE queue SET data = ? WHERE id = ?');
+          const upS = db.prepare('UPDATE saved SET data = ? WHERE id = ?');
+          ad.localImageUrl = localPath;
+          upQ.run(JSON.stringify(ad), id);
+          upS.run(JSON.stringify(ad), id);
+          return res.sendFile(filePath);
+        }
+      }
+    } catch (_) {}
+  }
+  next(); // 404
+});
 app.use('/images', express.static(IMAGES_DIR));
 
 // ─── AUTH ROUTE ───────────────────────────────────────────────────────────────
@@ -154,10 +206,10 @@ app.post('/api/queue', auth, async (req, res) => {
         }
       });
     }
-    if (ad.imageUrl && !ad.imageUrl.startsWith('/images/')) {
+    if (ad.imageUrl && !ad.imageUrl.startsWith('/images/') && !ad.localImageUrl) {
       downloadImage(ad.imageUrl, ad.id).then(localPath => {
         if (localPath) {
-          ad.imageUrl = localPath;
+          ad.localImageUrl = localPath; // preserva imageUrl original
           db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
         }
       });
@@ -192,9 +244,9 @@ app.post('/api/saved', auth, async (req, res) => {
     const localPath = await downloadVideo(ad.videoUrl, ad.id);
     if (localPath) { ad.videoUrl = localPath; changed = true; }
   }
-  if (ad.imageUrl && !ad.imageUrl.startsWith('/images/')) {
+  if (ad.imageUrl && !ad.imageUrl.startsWith('/images/') && !ad.localImageUrl) {
     const localPath = await downloadImage(ad.imageUrl, ad.id);
-    if (localPath) { ad.imageUrl = localPath; changed = true; }
+    if (localPath) { ad.localImageUrl = localPath; changed = true; } // preserva imageUrl original
   }
   if (changed) {
     db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
@@ -225,7 +277,7 @@ app.post('/api/analyze', auth, async (req, res) => {
 
   const prompt = `Voce e um especialista em marketing direto e copywriting. Analise este anuncio do Facebook com visao estrategica e objetiva.
 
-ANUNCIANTE: ${ad.advertiser || 'Desconhecido'}
+ANUNCIANTE:${ad.advertiser || 'Desconhecido'}
 NICHO: ${ad.niche || 'nao informado'}
 COPY PRINCIPAL:
 ${ad.copy || '(sem copy)'}
@@ -275,7 +327,6 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
   }
 });
 
-// ──�
 // ─── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
 
