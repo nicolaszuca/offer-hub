@@ -44,7 +44,7 @@ function auth(req, res, next) {
   if (!AUTH_ENABLED) return next();
   const header = req.headers.authorization || '';
   const token = header.replace('Bearer ', '').trim();
-  if (token !== getToken()) return res.status(401).json({ error: 'Não autorizado' });
+  if (token !== getToken()) return res.status(401).json({ error: 'Nao autorizado' });
   next();
 }
 
@@ -60,7 +60,6 @@ app.use((req, res, next) => {
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-// Serve vídeos do VIDEOS_DIR (pode ser volume externo)
 app.use('/videos', express.static(VIDEOS_DIR));
 app.use('/images', express.static(IMAGES_DIR));
 
@@ -122,7 +121,6 @@ app.post('/api/queue', auth, async (req, res) => {
   const ads = Array.isArray(req.body) ? req.body : [req.body];
   const insert = db.prepare('INSERT OR IGNORE INTO queue (id, data) VALUES (?, ?)');
 
-  // Responde imediatamente, baixa vídeos em background
   const prepared = ads.map(ad => {
     if (!ad.id) ad.id = crypto.randomUUID();
     return ad;
@@ -134,7 +132,6 @@ app.post('/api/queue', auth, async (req, res) => {
   insertMany(prepared);
   res.json({ ok: true, count: prepared.length });
 
-  // Download de mídia em background (não bloqueia resposta)
   for (const ad of prepared) {
     if (ad.videoUrl && !ad.videoUrl.startsWith('/videos/')) {
       downloadVideo(ad.videoUrl, ad.id).then(localPath => {
@@ -174,4 +171,101 @@ app.get('/api/saved', auth, (req, res) => {
 app.post('/api/saved', auth, async (req, res) => {
   const ad = req.body;
   if (!ad.id) ad.id = crypto.randomUUID();
-  db.prepare('INSERT OR REPLACE INTO saved (id, data) VALUES (?, ?)').run(ad.id, JSON.s
+  db.prepare('INSERT OR REPLACE INTO saved (id, data) VALUES (?, ?)').run(ad.id, JSON.stringify(ad));
+  res.json({ ok: true, id: ad.id });
+
+  let changed = false;
+  if (ad.videoUrl && !ad.videoUrl.startsWith('/videos/')) {
+    const localPath = await downloadVideo(ad.videoUrl, ad.id);
+    if (localPath) { ad.videoUrl = localPath; changed = true; }
+  }
+  if (ad.imageUrl && !ad.imageUrl.startsWith('/images/')) {
+    const localPath = await downloadImage(ad.imageUrl, ad.id);
+    if (localPath) { ad.imageUrl = localPath; changed = true; }
+  }
+  if (changed) {
+    db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+  }
+});
+
+app.patch('/api/saved/:id', auth, (req, res) => {
+  const { analysis } = req.body;
+  db.prepare('UPDATE saved SET analysis = ? WHERE id = ?').run(analysis, req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/saved/:id', auth, (req, res) => {
+  db.prepare('DELETE FROM saved WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/saved', auth, (req, res) => {
+  db.prepare('DELETE FROM saved').run();
+  res.json({ ok: true });
+});
+
+// ─── ANALYZE ──────────────────────────────────────────────────────────────────
+app.post('/api/analyze', auth, async (req, res) => {
+  const { ad } = req.body || {};
+  if (!ad) return res.status(400).json({ error: 'Ad nao fornecido' });
+  if (!CLAUDE_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY nao configurado' });
+
+  const prompt = `Voce e um especialista em marketing direto e copywriting. Analise este anuncio do Facebook com visao estrategica e objetiva.
+
+ANUNCIANTE: ${ad.advertiser || 'Desconhecido'}
+NICHO: ${ad.niche || 'nao informado'}
+COPY PRINCIPAL:
+${ad.copy || '(sem copy)'}
+
+TITULO DO LINK: ${ad.linkTitle || '(sem titulo)'}
+DESCRICAO: ${ad.linkDesc || '(sem descricao)'}
+
+Forneca a analise EXATAMENTE neste formato:
+
+GANCHO: [como o ad prende atencao nos primeiros segundos]
+
+OFERTA: [proposta de valor central e como e comunicada]
+
+COPY: [estrutura e principais tecnicas de persuasao usadas]
+
+PONTOS FORTES: [2 ou 3 elementos que fazem este ad funcionar]
+
+OPORTUNIDADES: [1 ou 2 melhorias que aumentariam a conversao]
+
+NOTA: [X/10] - [justificativa em 1 linha]`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 900,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(502).json({ error: `Erro na API do Claude: ${response.status}`, detail: err });
+    }
+
+    const data = await response.json();
+    const analysis = data.content?.[0]?.text || 'Analise nao disponivel';
+    res.json({ analysis });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
+
+// ─── START ────────────────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`Offer Hub rodando na porta ${PORT}`);
+});
