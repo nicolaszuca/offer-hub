@@ -276,3 +276,10 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
 });
 
 // ──�
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
+
+// ─── START ────────────────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`Offer Hub rodando na porta ${PORT}`);
+});
