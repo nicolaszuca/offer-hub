@@ -63,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .search-input:focus{background:#fff;border-color:var(--primary)}
 .search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.filter-sel{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text);background:#fff;cursor:pointer;outline:none;max-width:160px}
 .per-page-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
 .per-page-sel{border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--text);background:#fff;cursor:pointer;outline:none}
 .page-info{font-size:12px;color:var(--text2);white-space:nowrap}
@@ -157,6 +158,7 @@ body.dark .search-input{background:#3a3b3c;color:#e4e6eb}
 body.dark .search-input::placeholder{color:#6b7280}
 body.dark .search-input:focus{background:#4a4b4c;border-color:var(--primary)}
 body.dark .per-page-sel{background:#3a3b3c;color:#e4e6eb;border-color:#4a4b4c}
+body.dark .filter-sel{background:#3a3b3c;color:#e4e6eb;border-color:#4a4b4c}
 body.dark .page-btn{background:#3a3b3c;color:#b0b3b8;border-color:#4a4b4c}
 body.dark .page-btn:hover:not(:disabled){background:#4a4b4c;border-color:var(--primary);color:var(--primary)}
 body.dark .hub-card{box-shadow:0 2px 8px rgba(0,0,0,.4)}
@@ -256,6 +258,9 @@ body.dark .empty-title{color:#e4e6eb}
           placeholder="Buscar anunciante ou copy..." oninput="onSearch(this.value)">
       </div>
       <div class="topbar-right">
+        <select class="filter-sel" id="filter-advertiser" onchange="onFilterAdvertiser(this.value)">
+          <option value="">Todos anunciantes</option>
+        </select>
         <div class="per-page-wrap">
           Exibir:
           <select class="per-page-sel" id="per-page" onchange="changePerPage(this.value)">
@@ -341,7 +346,7 @@ body.dark .empty-title{color:#e4e6eb}
 const S = {
   token: localStorage.getItem('hub_token') || '',
   queue: [], saved: [],
-  tab: 'queue', page: 1, perPage: 16, search: '',
+  tab: 'queue', page: 1, perPage: 16, search: '', filterAdvertiser: '',
   analyzing: new Set(),
 };
 
@@ -390,7 +395,7 @@ async function loadData() {
   try {
     const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
     S.queue = q; S.saved = sv;
-    updateBadges(); renderGrid(); setSyncStatus('ok');
+    updateBadges(); updateAdvertiserFilter(); renderGrid(); setSyncStatus('ok');
   } catch { setSyncStatus('error'); }
 }
 
@@ -416,14 +421,25 @@ function switchTab(tab) {
 }
 
 function onSearch(v) { S.search = v.toLowerCase(); S.page = 1; renderGrid(); }
+function onFilterAdvertiser(v) { S.filterAdvertiser = v; S.page = 1; renderGrid(); }
 function changePerPage(v) { S.perPage = parseInt(v); S.page = 1; renderGrid(); }
+
+function updateAdvertiserFilter() {
+  const list = [...S.queue, ...S.saved];
+  const advertisers = [...new Set(list.map(a => a.advertiser).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-advertiser');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos anunciantes</option>' +
+    advertisers.map(a => `<option value="${a}"${a===current?' selected':''}>${a}</option>`).join('');
+}
 function prevPage() { if (S.page > 1) { S.page--; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; } }
 function nextPage() {
   if (S.page < Math.ceil(getFiltered().length / S.perPage)) { S.page++; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; }
 }
 
 function getFiltered() {
-  const list = S.tab === 'queue' ? S.queue : S.saved;
+  let list = S.tab === 'queue' ? S.queue : S.saved;
+  if (S.filterAdvertiser) list = list.filter(a => a.advertiser === S.filterAdvertiser);
   if (!S.search) return list;
   return list.filter(a =>
     (a.advertiser||'').toLowerCase().includes(S.search) ||
@@ -477,16 +493,16 @@ function buildCard(ad) {
     media = `<div class="card-media"><img src="${e(ad.imageUrl)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
-  // Link card (Facebook style)
+  // Link card — só mostra quando há conteúdo real (linkDesc) ou URL externa
   let link = '';
-  if (ad.linkTitle || ad.linkDesc || (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com/ads/library'))) {
+  const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
+  if (ad.linkDesc || isExternalUrl) {
     let domain = '';
     try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
-    const ctaLabel = ad.ctaText || 'Saiba mais';
+    const ctaLabel = ad.linkTitle || ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
         ${domain?`<div class="link-domain">${e(domain)}</div>`:''}
-        ${ad.linkTitle?`<div class="link-title">${e(ad.linkTitle)}</div>`:''}
         ${ad.linkDesc?`<div class="link-desc">${e(ad.linkDesc)}</div>`:''}
       </div>
       ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''}
@@ -501,9 +517,11 @@ function buildCard(ad) {
     analysis = `<div class="card-analysis">${e(ad.analysis)}</div>`;
   }
 
-  // AD LIBRARY button — abre página do anunciante na biblioteca de anúncios
-  const adlibUrl = ad.snapshotUrl
-    || (ad.advertiser ? `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(ad.advertiser)}&search_type=page` : '');
+  // AD LIBRARY button — abre o anúncio específico na biblioteca
+  const adlibUrl = (ad.snapshotUrl && ad.snapshotUrl.includes('facebook.com'))
+    ? ad.snapshotUrl
+    : (ad.adLibraryId ? `https://www.facebook.com/ads/library/?id=${ad.adLibraryId}`
+      : (ad.advertiser ? `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(ad.advertiser)}&search_type=page` : ''));
   const adlibBtn = adlibUrl ? `<a href="${e(adlibUrl)}" target="_blank" class="adlib-btn">AD LIBRARY</a>` : '';
 
   // Action icons in header
@@ -667,37 +685,4 @@ document.querySelectorAll('.modal-bg').forEach(el=>{
   el.addEventListener('click',ev=>{ if(ev.target===el) closeModal(el.id); });
 });
 
-// ── TOAST ─────────────────────────────────────────────────
-let _tt;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'),2500);
-}
-
-// ── DARK MODE ────────────────────────────────────────────
-(function() {
-  if (localStorage.getItem('hub_dark') === '1') {
-    document.body.classList.add('dark');
-  }
-})();
-
-function updateDarkBtn() {
-  const btn = document.getElementById('dark-toggle');
-  if (!btn) return;
-  const isDark = document.body.classList.contains('dark');
-  btn.innerHTML = isDark ? '<span>☀️</span> Modo Claro' : '<span>🌙</span> Modo Escuro';
-}
-
-function toggleDark() {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('hub_dark', isDark ? '1' : '0');
-  updateDarkBtn();
-}
-
-// ── INIT ─────────────────────────────────────────────────────
-checkAuth();
-updateDarkBtn();
-</script>
-</body>
-</html>
+// ── TOAST ───────────────────────�
