@@ -117,11 +117,24 @@ async function downloadVideo(url, id) {
   }
 }
 
+// Retorna true se o anúncio tem CTA levando para página externa (VSL/landing page)
+function hasExternalCta(ad) {
+  if (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com')) return true;
+  if (ad.linkDesc || ad.linkTitle) return true;
+  if (ad.ctaText && ad.ctaText.trim().length > 0) return true;
+  return false;
+}
+
 app.post('/api/queue', auth, async (req, res) => {
   const ads = Array.isArray(req.body) ? req.body : [req.body];
   const insert = db.prepare('INSERT OR IGNORE INTO queue (id, data) VALUES (?, ?)');
 
-  const prepared = ads.map(ad => {
+  // Filtra apenas anúncios com CTA externo (landing page / VSL)
+  const filtered = ads.filter(ad => hasExternalCta(ad));
+  const skipped = ads.length - filtered.length;
+  if (skipped > 0) console.log(`[queue] ${skipped} anúncio(s) ignorado(s) (sem link externo)`);
+
+  const prepared = filtered.map(ad => {
     if (!ad.id) ad.id = crypto.randomUUID();
     return ad;
   });
@@ -262,10 +275,4 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
   }
 });
 
-// ─── HEALTH ───────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
-
-// ─── START ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Offer Hub rodando na porta ${PORT}`);
-});
+// ──�
