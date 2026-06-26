@@ -685,4 +685,28 @@ document.querySelectorAll('.modal-bg').forEach(el=>{
   el.addEventListener('click',ev=>{ if(ev.target===el) closeModal(el.id); });
 });
 
-// ── TOAST ───────────────────────�
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ── DARK MODE ─────────────────────────────────────────────────────────────────
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('hub_dark', document.body.classList.contains('dark') ? '1' : '');
+  updateDarkBtn();
+}
+function updateDarkBtn() {
+  const isDark = document.body.classList.contains('dark');
+  document.getElementById('dark-toggle').innerHTML = `<span>${isDark ? '☀️' : '🌙'}</span> Modo ${isDark ? 'Claro' : 'Escuro'}`;
+}
+if (localStorage.getItem('hub_dark')) document.body.classList.add('dark');
+
+// ── INIT ─────────────────────────────────────────────────────────────
+checkAuth();
+updateDarkBtn();
+</script>
+</body>
+</html>
