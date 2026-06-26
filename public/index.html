@@ -203,7 +203,7 @@ body.dark .empty-title{color:#e4e6eb}
 <div id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo">Offer<span>Hub</span></div>
-    <div class="login-sub">Hub de mineração e análise de ofertas</div>
+    <div class="login-sub">Hub de mineraÃ§Ã£o e anÃ¡lise de ofertas</div>
     <label class="login-label">Senha</label>
     <input class="login-input" type="password" id="login-pwd" placeholder="Digite a senha..."
       onkeydown="if(event.key==='Enter')doLogin()">
@@ -221,24 +221,24 @@ body.dark .empty-title{color:#e4e6eb}
 
     <div class="s-section">Visualizar</div>
     <div class="nav-item active" id="nav-queue" onclick="switchTab('queue')">
-      <span class="nav-icon">📥</span> Fila
+      <span class="nav-icon">ð¥</span> Fila
       <span class="nav-badge" id="badge-queue">0</span>
     </div>
     <div class="nav-item" id="nav-saved" onclick="switchTab('saved')">
-      <span class="nav-icon">⭐</span> Salvos
+      <span class="nav-icon">â­</span> Salvos
       <span class="nav-badge" id="badge-saved">0</span>
     </div>
 
     <div class="s-divider"></div>
-    <div class="s-section">Ações</div>
-    <button class="s-action" onclick="openImport()"><span>📋</span> Importar Ads</button>
-    <button class="s-action" onclick="exportSaved()"><span>📤</span> Exportar Salvos</button>
-    <button class="s-action" onclick="exportAll()"><span>💾</span> Exportar Tudo</button>
-    <button class="s-action" onclick="confirmClearQueue()"><span>🗑️</span> Limpar Fila</button>
+    <div class="s-section">AÃ§Ãµes</div>
+    <button class="s-action" onclick="openImport()"><span>ð</span> Importar Ads</button>
+    <button class="s-action" onclick="exportSaved()"><span>ð¤</span> Exportar Salvos</button>
+    <button class="s-action" onclick="exportAll()"><span>ð¾</span> Exportar Tudo</button>
+    <button class="s-action" onclick="confirmClearQueue()"><span>ðï¸</span> Limpar Fila</button>
 
     <div class="sidebar-bottom">
       <div class="s-divider"></div>
-      <button class="s-action" id="dark-toggle" onclick="toggleDark()"><span>🌙</span> Modo Escuro</button>
+      <button class="s-action" id="dark-toggle" onclick="toggleDark()"><span>ð</span> Modo Escuro</button>
       <div class="s-divider"></div>
       <div class="sync-info">
         <div class="sync-dot" id="sync-dot"></div>
@@ -253,7 +253,7 @@ body.dark .empty-title{color:#e4e6eb}
     <!-- TOPBAR -->
     <div class="topbar">
       <div class="search-wrap">
-        <span class="search-ico">🔍</span>
+        <span class="search-ico">ð</span>
         <input class="search-input" type="text" id="search-input"
           placeholder="Buscar anunciante ou copy..." oninput="onSearch(this.value)">
       </div>
@@ -272,8 +272,8 @@ body.dark .empty-title{color:#e4e6eb}
         </div>
         <div class="page-info" id="page-info">0 ads</div>
         <div class="pagination">
-          <button class="page-btn" id="btn-prev" onclick="prevPage()" disabled>◀</button>
-          <button class="page-btn" id="btn-next" onclick="nextPage()" disabled>▶</button>
+          <button class="page-btn" id="btn-prev" onclick="prevPage()" disabled>â</button>
+          <button class="page-btn" id="btn-next" onclick="nextPage()" disabled>â¶</button>
         </div>
       </div>
     </div>
@@ -289,8 +289,8 @@ body.dark .empty-title{color:#e4e6eb}
 <div class="modal-bg" id="modal-import" style="display:none">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title">📋 Importar Ads</div>
-      <button class="modal-x" onclick="closeModal('modal-import')">✕</button>
+      <div class="modal-title">ð Importar Ads</div>
+      <button class="modal-x" onclick="closeModal('modal-import')">â</button>
     </div>
     <div class="modal-body">
       <label class="m-label">Cole um array JSON de ads</label>
@@ -305,12 +305,12 @@ body.dark .empty-title{color:#e4e6eb}
   </div>
 </div>
 
-<!-- MODAL ANÁLISE -->
+<!-- MODAL ANÃLISE -->
 <div class="modal-bg" id="modal-analysis" style="display:none">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title">🤖 Análise do Ad</div>
-      <button class="modal-x" onclick="closeModal('modal-analysis')">✕</button>
+      <div class="modal-title">ð¤ AnÃ¡lise do Ad</div>
+      <button class="modal-x" onclick="closeModal('modal-analysis')">â</button>
     </div>
     <div class="modal-body">
       <div class="analysis-text" id="analysis-content"></div>
@@ -326,7 +326,7 @@ body.dark .empty-title{color:#e4e6eb}
   <div class="modal">
     <div class="modal-head">
       <div class="modal-title" id="confirm-title">Confirmar</div>
-      <button class="modal-x" onclick="closeModal('modal-confirm')">✕</button>
+      <button class="modal-x" onclick="closeModal('modal-confirm')">â</button>
     </div>
     <div class="modal-body">
       <p id="confirm-msg" style="font-size:14px;line-height:1.6;color:#374151"></p>
@@ -342,7 +342,7 @@ body.dark .empty-title{color:#e4e6eb}
 <div id="toast"></div>
 
 <script>
-// ── ESTADO ──────────────────────────────────────────────────────────────────
+// ââ ESTADO ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const S = {
   token: localStorage.getItem('hub_token') || '',
   queue: [], saved: [],
@@ -358,7 +358,7 @@ const API = async (method, path, body) => {
   return r.json();
 };
 
-// ── AUTH ────────────────────────────────────────────────────────────────────
+// ââ AUTH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function checkAuth() {
   try {
     const r = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password:''}) });
@@ -378,7 +378,7 @@ async function doLogin() {
     if (!r.ok) { document.getElementById('login-err').textContent = 'Senha incorreta'; return; }
     const { token } = await r.json();
     S.token = token; localStorage.setItem('hub_token', token); showApp();
-  } catch { document.getElementById('login-err').textContent = 'Erro de conexão'; }
+  } catch { document.getElementById('login-err').textContent = 'Erro de conexÃ£o'; }
 }
 
 function showLogin() { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').classList.remove('visible'); }
@@ -389,7 +389,7 @@ function showApp() {
   setInterval(loadData, 30000);
 }
 
-// ── DADOS ────────────────────────────────────────────────────────────────────
+// ââ DADOS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadData() {
   setSyncStatus('loading');
   try {
@@ -412,7 +412,7 @@ function setSyncStatus(st) {
   else { dot.className = 'sync-dot'; txt.textContent = 'Erro de sync'; }
 }
 
-// ── TABS / BUSCA / PAGINAÇÃO ─────────────────────────────────────────────────
+// ââ TABS / BUSCA / PAGINAÃÃO âââââââââââââââââââââââââââââââââââââââââââââââââ
 function switchTab(tab) {
   S.tab = tab; S.page = 1;
   document.getElementById('nav-queue').className = 'nav-item' + (tab==='queue'?' active':'');
@@ -448,7 +448,7 @@ function getFiltered() {
   );
 }
 
-// ── RENDER ───────────────────────────────────────────────────────────────────
+// ââ RENDER âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderGrid() {
   const filtered = getFiltered();
   const total = filtered.length;
@@ -458,7 +458,7 @@ function renderGrid() {
   const items = filtered.slice(start, start + S.perPage);
 
   const info = document.getElementById('page-info');
-  info.textContent = total === 0 ? '0 ads' : `${start+1}–${Math.min(start+S.perPage,total)} de ${total}`;
+  info.textContent = total === 0 ? '0 ads' : `${start+1}â${Math.min(start+S.perPage,total)} de ${total}`;
   document.getElementById('btn-prev').disabled = S.page <= 1;
   document.getElementById('btn-next').disabled = S.page >= pages;
 
@@ -466,10 +466,10 @@ function renderGrid() {
   if (items.length === 0) {
     const isQ = S.tab === 'queue';
     grid.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">${isQ?'📭':'⭐'}</div>
+      <div class="empty-icon">${isQ?'ð­':'â­'}</div>
       <div class="empty-title">${isQ?'Fila vazia':'Nenhum ad salvo'}</div>
       <div class="empty-desc">${isQ
-        ? 'Configure a extensão Chrome e navegue pelo Facebook para capturar anúncios automaticamente.'
+        ? 'Configure a extensÃ£o Chrome e navegue pelo Facebook para capturar anÃºncios automaticamente.'
         : 'Salve ads da fila para analisar com IA e acompanhar os melhores.'}</div>
     </div>`;
     return;
@@ -493,7 +493,7 @@ function buildCard(ad) {
     media = `<div class="card-media"><img src="${e(ad.imageUrl)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
-  // Link card — só mostra quando há conteúdo real (linkDesc) ou URL externa
+  // Link card â sÃ³ mostra quando hÃ¡ conteÃºdo real (linkDesc) ou URL externa
   let link = '';
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
   if (ad.linkDesc || isExternalUrl) {
@@ -512,31 +512,32 @@ function buildCard(ad) {
   // Analysis
   let analysis = '';
   if (S.analyzing.has(id)) {
-    analysis = `<div class="analyzing-msg">⏳ Analisando com IA...</div>`;
+    analysis = `<div class="analyzing-msg">â³ Analisando com IA...</div>`;
   } else if (!isQ && ad.analysis) {
     analysis = `<div class="card-analysis">${e(ad.analysis)}</div>`;
   }
 
-  // AD LIBRARY button — abre o anúncio específico na biblioteca
-  const adlibUrl = (ad.snapshotUrl && ad.snapshotUrl.includes('facebook.com'))
+  // AD LIBRARY button â abre o anÃºncio especÃ­fico na biblioteca (sempre country=ALL)
+  const _rawAdlibUrl = (ad.snapshotUrl && ad.snapshotUrl.includes('facebook.com'))
     ? ad.snapshotUrl
     : (ad.adLibraryId ? `https://www.facebook.com/ads/library/?id=${ad.adLibraryId}`
       : (ad.advertiser ? `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(ad.advertiser)}&search_type=page` : ''));
+  const adlibUrl = _rawAdlibUrl ? _rawAdlibUrl.replace(/country=[A-Z]{2,3}/gi, 'country=ALL') : '';
   const adlibBtn = adlibUrl ? `<a href="${e(adlibUrl)}" target="_blank" class="adlib-btn">AD LIBRARY</a>` : '';
 
   // Action icons in header
   let actionIcons = '';
   if (isQ) {
     actionIcons = `
-      <button class="hdr-icon save" title="Salvar" onclick="saveAd('${id}')">⭐</button>
-      <button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeAndSave('${id}')">🤖</button>
-      <button class="hdr-icon del" title="Ignorar" onclick="deleteQueue('${id}')">🗑️</button>`;
+      <button class="hdr-icon save" title="Salvar" onclick="saveAd('${id}')">â­</button>
+      <button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeAndSave('${id}')">ð¤</button>
+      <button class="hdr-icon del" title="Ignorar" onclick="deleteQueue('${id}')">ðï¸</button>`;
   } else {
     actionIcons = `
       ${ad.analysis
-        ? `<button class="hdr-icon analyze" title="Ver Análise" onclick="showAnalysis('${id}')">📋</button>`
-        : `<button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeSaved('${id}')">🤖</button>`}
-      <button class="hdr-icon del" title="Remover" onclick="deleteSaved('${id}')">🗑️</button>`;
+        ? `<button class="hdr-icon analyze" title="Ver AnÃ¡lise" onclick="showAnalysis('${id}')">ð</button>`
+        : `<button class="hdr-icon analyze" title="Analisar com IA" onclick="analyzeSaved('${id}')">ð¤</button>`}
+      <button class="hdr-icon del" title="Remover" onclick="deleteSaved('${id}')">ðï¸</button>`;
   }
 
   return `<div class="hub-card" id="card-${id}">
@@ -544,14 +545,14 @@ function buildCard(ad) {
       <div class="card-avatar">${ad.pageLogo ? `<img src="${e(ad.pageLogo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none';this.parentElement.textContent='${initials}'" alt="">` : initials}</div>
       <div class="card-meta">
         <div class="card-name" title="${e(name)}">${e(name)}</div>
-        <div class="card-sub">🌐 Patrocinado · ${e(ad.addedAt||ad.createdAt||'')}</div>
+        <div class="card-sub">ð Patrocinado Â· ${e(ad.addedAt||ad.createdAt||'')}</div>
       </div>
       <div class="card-actions">
         ${adlibBtn}
         ${actionIcons}
       </div>
     </div>
-    ${copy?`<div class="card-copy" id="copy-${id}">${e(copy)}</div>${isLong?`<button class="copy-more" onclick="toggleCopy('${id}')">Ver mais ▾</button>`:''}` : ''}
+    ${copy?`<div class="card-copy" id="copy-${id}">${e(copy)}</div>${isLong?`<button class="copy-more" onclick="toggleCopy('${id}')">Ver mais â¾</button>`:''}` : ''}
     ${media}
     ${link}
     ${analysis}
@@ -568,10 +569,10 @@ function toggleCopy(id) {
   const btn = el.nextElementSibling;
   if (!btn || !btn.classList.contains('copy-more')) return;
   const open = el.classList.toggle('open');
-  btn.textContent = open ? 'Ver menos ▴' : 'Ver mais ▾';
+  btn.textContent = open ? 'Ver menos â´' : 'Ver mais â¾';
 }
 
-// ── AÇÕES ────────────────────────────────────────────────────────────────────
+// ââ AÃÃES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function saveAd(id) {
   const ad = S.queue.find(a=>a.id===id); if (!ad) return;
   try {
@@ -579,8 +580,8 @@ async function saveAd(id) {
     await API('DELETE',`/api/queue/${id}`);
     S.queue = S.queue.filter(a=>a.id!==id);
     S.saved.unshift(ad);
-    updateBadges(); renderGrid(); toast('✅ Ad salvo!');
-  } catch { toast('❌ Erro ao salvar'); }
+    updateBadges(); renderGrid(); toast('â Ad salvo!');
+  } catch { toast('â Erro ao salvar'); }
 }
 
 async function analyzeAndSave(id) {
@@ -590,9 +591,9 @@ async function analyzeAndSave(id) {
     await API('DELETE',`/api/queue/${id}`);
     S.queue = S.queue.filter(a=>a.id!==id);
     S.saved.unshift({...ad});
-    updateBadges(); renderGrid(); toast('✅ Salvo! Analisando...');
+    updateBadges(); renderGrid(); toast('â Salvo! Analisando...');
     await analyzeSaved(id);
-  } catch { toast('❌ Erro ao salvar'); }
+  } catch { toast('â Erro ao salvar'); }
 }
 
 async function analyzeSaved(id) {
@@ -603,10 +604,10 @@ async function analyzeSaved(id) {
     await API('PATCH',`/api/saved/${id}`,{analysis});
     const idx = S.saved.findIndex(a=>a.id===id);
     if (idx !== -1) S.saved[idx].analysis = analysis;
-    S.analyzing.delete(id); renderGrid(); toast('✅ Análise concluída!');
+    S.analyzing.delete(id); renderGrid(); toast('â AnÃ¡lise concluÃ­da!');
   } catch (err) {
     S.analyzing.delete(id); renderGrid();
-    toast('❌ ' + (err.message.includes('500') ? 'Configure a chave da API Claude' : 'Erro na análise'));
+    toast('â ' + (err.message.includes('500') ? 'Configure a chave da API Claude' : 'Erro na anÃ¡lise'));
   }
 }
 
@@ -621,23 +622,23 @@ async function deleteQueue(id) {
   try {
     await API('DELETE',`/api/queue/${id}`);
     S.queue = S.queue.filter(a=>a.id!==id);
-    updateBadges(); renderGrid(); toast('🗑️ Removido da fila');
-  } catch { toast('❌ Erro'); }
+    updateBadges(); renderGrid(); toast('ðï¸ Removido da fila');
+  } catch { toast('â Erro'); }
 }
 
 async function deleteSaved(id) {
   try {
     await API('DELETE',`/api/saved/${id}`);
     S.saved = S.saved.filter(a=>a.id!==id);
-    updateBadges(); renderGrid(); toast('🗑️ Removido dos salvos');
-  } catch { toast('❌ Erro'); }
+    updateBadges(); renderGrid(); toast('ðï¸ Removido dos salvos');
+  } catch { toast('â Erro'); }
 }
 
 function confirmClearQueue() {
-  if (!S.queue.length) { toast('Fila já está vazia'); return; }
+  if (!S.queue.length) { toast('Fila jÃ¡ estÃ¡ vazia'); return; }
   showConfirm('Limpar Fila',
-    `Remover todos os ${S.queue.length} ads da fila? Esta ação não pode ser desfeita.`,
-    async () => { await API('DELETE','/api/queue'); S.queue=[]; updateBadges(); renderGrid(); toast('🗑️ Fila limpa'); }
+    `Remover todos os ${S.queue.length} ads da fila? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`,
+    async () => { await API('DELETE','/api/queue'); S.queue=[]; updateBadges(); renderGrid(); toast('ðï¸ Fila limpa'); }
   );
 }
 
@@ -648,15 +649,15 @@ function showConfirm(title, msg, onOk) {
   document.getElementById('modal-confirm').style.display = 'flex';
 }
 
-// ── EXPORTAR ─────────────────────────────────────────────────────────────────
+// ââ EXPORTAR âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function exportSaved() {
   if (!S.saved.length) { toast('Nenhum ad salvo para exportar'); return; }
   download('offer-hub-salvos.json', JSON.stringify(S.saved, null, 2));
-  toast(`📤 ${S.saved.length} ads exportados`);
+  toast(`ð¤ ${S.saved.length} ads exportados`);
 }
 function exportAll() {
   download('offer-hub-completo.json', JSON.stringify({queue:S.queue,saved:S.saved},null,2));
-  toast(`📤 Exportado: ${S.queue.length} na fila + ${S.saved.length} salvos`);
+  toast(`ð¤ Exportado: ${S.queue.length} na fila + ${S.saved.length} salvos`);
 }
 function download(name, content) {
   const a = document.createElement('a');
@@ -664,7 +665,7 @@ function download(name, content) {
   a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
 
-// ── IMPORTAR ──────────────────────────────────────────────
+// ââ IMPORTAR ââââââââââââââââââââââââââââââââââââââââââââââ
 function openImport() { document.getElementById('modal-import').style.display='flex'; }
 async function doImport() {
   const raw = document.getElementById('import-json').value.trim();
@@ -673,26 +674,26 @@ async function doImport() {
     const ads = JSON.parse(raw);
     if (!Array.isArray(ads)) throw new Error('JSON deve ser um array');
     await API('POST','/api/queue',ads);
-    msg.style.color='#22c55e'; msg.textContent=`✅ ${ads.length} ad(s) importado(s)!`;
+    msg.style.color='#22c55e'; msg.textContent=`â ${ads.length} ad(s) importado(s)!`;
     await loadData();
     setTimeout(()=>closeModal('modal-import'),1200);
-  } catch(err) { msg.style.color='#ef4444'; msg.textContent='❌ '+err.message; }
+  } catch(err) { msg.style.color='#ef4444'; msg.textContent='â '+err.message; }
 }
 
-// ── MODAIS ───────────────────────────────────────────────
+// ââ MODAIS âââââââââââââââââââââââââââââââââââââââââââââââ
 function closeModal(id) { document.getElementById(id).style.display='none'; }
 document.querySelectorAll('.modal-bg').forEach(el=>{
-  el.addEventListener('click',ev=>{ if(ev.target===el) closeModal(el.id); });
+  el.addEventListener('click', e => { if(e.target===el) closeModal(el.id); });
 });
 
-// ── TOAST ─────────────────────────────────────────────────────────────────────
+// ââ TOAST âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function toast(msg, dur = 2800) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
-// ── DARK MODE ─────────────────────────────────────────────────────────────────
+// ââ DARK MODE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function toggleDark() {
   document.body.classList.toggle('dark');
   localStorage.setItem('hub_dark', document.body.classList.contains('dark') ? '1' : '');
@@ -700,11 +701,11 @@ function toggleDark() {
 }
 function updateDarkBtn() {
   const isDark = document.body.classList.contains('dark');
-  document.getElementById('dark-toggle').innerHTML = `<span>${isDark ? '☀️' : '🌙'}</span> Modo ${isDark ? 'Claro' : 'Escuro'}`;
+  document.getElementById('dark-toggle').innerHTML = `<span>${isDark ? 'âï¸' : 'ð'}</span> Modo ${isDark ? 'Claro' : 'Escuro'}`;
 }
 if (localStorage.getItem('hub_dark')) document.body.classList.add('dark');
 
-// ── INIT ─────────────────────────────────────────────────────────────
+// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââ
 checkAuth();
 updateDarkBtn();
 </script>
