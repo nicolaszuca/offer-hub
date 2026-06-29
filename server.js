@@ -49,7 +49,8 @@ async function migratePageLogos() {
     for (const row of rows) {
       try {
         const ad = JSON.parse(row.data);
-        if (ad.pageLogo && ad.pageLogo.startsWith('http') && !ad.localPageLogo) {
+        const logoFile = path.join(IMAGES_DIR, `${ad.id}-logo.jpg`);
+        if (ad.pageLogo && ad.pageLogo.startsWith('http') && !fs.existsSync(logoFile)) {
           const localPath = await downloadImage(ad.pageLogo, ad.id, '-logo');
           if (localPath) {
             ad.localPageLogo = localPath;
@@ -109,22 +110,31 @@ app.use('/videos', express.static(VIDEOS_DIR));
 app.use('/images', async (req, res, next) => {
   const filePath = path.join(IMAGES_DIR, req.path);
   if (fs.existsSync(filePath)) return next(); // arquivo existe, serve normalmente
-  // Tentar re-baixar: busca o ad pelo id (nome do arquivo sem extensão)
-  const id = path.basename(req.path, path.extname(req.path));
+  // Detecta se é logo (-logo) ou imagem principal
+  const baseName = path.basename(req.path, path.extname(req.path));
+  const isLogo = baseName.endsWith('-logo');
+  const id = isLogo ? baseName.slice(0, -5) : baseName;
   const row = db.prepare(
     'SELECT data FROM queue WHERE id = ? UNION ALL SELECT data FROM saved WHERE id = ? LIMIT 1'
   ).get(id, id);
   if (row) {
     try {
       const ad = JSON.parse(row.data);
-      const origUrl = ad.imageUrl?.startsWith('http') ? ad.imageUrl : null;
+      let origUrl, suffix;
+      if (isLogo) {
+        origUrl = ad.pageLogo?.startsWith('http') ? ad.pageLogo : null;
+        suffix = '-logo';
+      } else {
+        origUrl = ad.imageUrl?.startsWith('http') ? ad.imageUrl : null;
+        suffix = '';
+      }
       if (origUrl) {
-        const localPath = await downloadImage(origUrl, id);
+        const localPath = await downloadImage(origUrl, id, suffix);
         if (localPath) {
-          // Atualiza DB com localImageUrl
           const upQ = db.prepare('UPDATE queue SET data = ? WHERE id = ?');
           const upS = db.prepare('UPDATE saved SET data = ? WHERE id = ?');
-          ad.localImageUrl = localPath;
+          if (isLogo) ad.localPageLogo = localPath;
+          else ad.localImageUrl = localPath;
           upQ.run(JSON.stringify(ad), id);
           upS.run(JSON.stringify(ad), id);
           return res.sendFile(filePath);
