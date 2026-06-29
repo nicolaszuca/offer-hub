@@ -354,4 +354,19 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
     }
 
     const data = await response.json();
-    con
+    const analysis = data.content?.[0]?.text || 'Analise nao disponivel';
+    res.json({ analysis });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
+
+// ─── START ────────────────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`Offer Hub rodando na porta ${PORT}`);
+  // Baixa pageLogos em background após inicializar
+  setTimeout(() => migratePageLogos().catch(console.error), 3000);
+});
