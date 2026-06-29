@@ -389,15 +389,15 @@ function showApp() {
   setInterval(loadData, 30000);
 }
 
-// ── DADOS ───────────────────────────────────────────────────────────────────
-const loadData = async () => {
+// ── DADOS ────────────────────────────────────────────────────────────────────
+async function loadData() {
   setSyncStatus('loading');
   try {
     const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
     S.queue = q; S.saved = sv;
     updateBadges(); updateAdvertiserFilter(); renderGrid(); setSyncStatus('ok');
   } catch { setSyncStatus('error'); }
-};
+}
 
 function updateBadges() {
   document.getElementById('badge-queue').textContent = S.queue.length;
@@ -412,7 +412,7 @@ function setSyncStatus(st) {
   else { dot.className = 'sync-dot'; txt.textContent = 'Erro de sync'; }
 }
 
-// ── TABS / BUSCA / PAGINAÇÃO ──────────────────────────────────────────────────
+// ── TABS / BUSCA / PAGINAÇÃO ─────────────────────────────────────────────────
 function switchTab(tab) {
   S.tab = tab; S.page = 1;
   document.getElementById('nav-queue').className = 'nav-item' + (tab==='queue'?' active':'');
@@ -448,7 +448,7 @@ function getFiltered() {
   );
 }
 
-// ── RENDER ─────────────────────────────────────────────────────────────────
+// ── RENDER ───────────────────────────────────────────────────────────────────
 function renderGrid() {
   const filtered = getFiltered();
   const total = filtered.length;
@@ -466,11 +466,11 @@ function renderGrid() {
   if (items.length === 0) {
     const isQ = S.tab === 'queue';
     grid.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">${isQ?\'📭\':\'⭐\'}</div>
-      <div class="empty-title">${isQ?\'Fila vazia\':\'Nenhum ad salvo\'}</div>
+      <div class="empty-icon">${isQ?'📭':'⭐'}</div>
+      <div class="empty-title">${isQ?'Fila vazia':'Nenhum ad salvo'}</div>
       <div class="empty-desc">${isQ
-        ? \'Configure a extensão Chrome e navegue pelo Facebook para capturar anúcios automaticamente.\'
-        : \'Salve ads da fila para analisar com IA e acompanhar os melhores.\'}</div>
+        ? 'Configure a extensão Chrome e navegue pelo Facebook para capturar anúncios automaticamente.'
+        : 'Salve ads da fila para analisar com IA e acompanhar os melhores.'}</div>
     </div>`;
     return;
   }
@@ -485,6 +485,7 @@ function buildCard(ad) {
   const name = ad.advertiser || 'Desconhecido';
   const initials = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
 
+  // Media — usa localImageUrl (cache local) ou imageUrl (URL original do Facebook) como fallback
   const thumbSrc = ad.localImageUrl || (ad.imageUrl?.startsWith('http') ? ad.imageUrl : '');
   let media = '';
   if (ad.videoUrl) {
@@ -493,15 +494,13 @@ function buildCard(ad) {
     media = `<div class="card-media"><img src="${e(thumbSrc)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
+  // Link card — mostra quando há linkDesc, URL externa OU ctaText com snapshotUrl
   let link = '';
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
   const hasCta = ad.linkDesc || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
     let domain = '';
     try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
-    const ctaLabel = ad.ctaText || ad.linkTitle || 'Saiba mais';
-    link = `<div class="card-link">
-      <div class="link-m��ttp://x').hostname.replace('www.',''); } catch {}
     const ctaLabel = ad.ctaText || ad.linkTitle || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
