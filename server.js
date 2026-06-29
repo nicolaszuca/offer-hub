@@ -201,8 +201,13 @@ async function downloadVideo(url, id) {
   }
 }
 
+// CTAs que indicam doação, engajamento social ou ação sem landing page — ignorar
+const BLOCKED_CTA = ['donate', 'like', 'follow', 'see more', 'send message', 'call now', 'directions', 'save'];
+
 // Retorna true se o anúncio tem CTA levando para página externa (VSL/landing page)
 function hasExternalCta(ad) {
+  const ctaRaw = (ad.ctaText || ad.linkTitle || '').toLowerCase().trim();
+  if (ctaRaw && BLOCKED_CTA.some(b => ctaRaw === b || ctaRaw.startsWith(b + ' '))) return false;
   if (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com')) return true;
   if (ad.linkDesc || ad.linkTitle) return true;
   if (ad.ctaText && ad.ctaText.trim().length > 0) return true;
