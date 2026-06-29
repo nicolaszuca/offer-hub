@@ -132,20 +132,21 @@ app.get('/api/queue', auth, (req, res) => {
 });
 
 // ─── IMAGE DOWNLOAD ───────────────────────────────────────────────────────────
-async function downloadImage(url, id) {
+async function downloadImage(url, id, suffix = '') {
   try {
-    const filePath = path.join(IMAGES_DIR, `${id}.jpg`);
-    if (fs.existsSync(filePath)) return `/images/${id}.jpg`;
+    const fname = suffix ? `${id}${suffix}.jpg` : `${id}.jpg`;
+    const filePath = path.join(IMAGES_DIR, fname);
+    if (fs.existsSync(filePath)) return `/images/${fname}`;
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
     });
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     fs.writeFileSync(filePath, Buffer.from(buf));
-    console.log(`[image] Salvo: ${id}.jpg (${Math.round(buf.byteLength/1024)}KB)`);
-    return `/images/${id}.jpg`;
+    console.log(`[image] Salvo: ${fname} (${Math.round(buf.byteLength/1024)}KB)`);
+    return `/images/${fname}`;
   } catch (e) {
-    console.warn(`[image] Erro ao baixar ${id}:`, e.message);
+    console.warn(`[image] Erro ao baixar ${id}${suffix}:`, e.message);
     return null;
   }
 }
@@ -209,7 +210,15 @@ app.post('/api/queue', auth, async (req, res) => {
     if (ad.imageUrl && !ad.imageUrl.startsWith('/images/') && !ad.localImageUrl) {
       downloadImage(ad.imageUrl, ad.id).then(localPath => {
         if (localPath) {
-          ad.localImageUrl = localPath; // preserva imageUrl original
+          ad.localImageUrl = localPath;
+          db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+        }
+      });
+    }
+    if (ad.pageLogo && ad.pageLogo.startsWith('http') && !ad.localPageLogo) {
+      downloadImage(ad.pageLogo, ad.id, '-logo').then(localPath => {
+        if (localPath) {
+          ad.localPageLogo = localPath;
           db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
         }
       });
@@ -246,7 +255,11 @@ app.post('/api/saved', auth, async (req, res) => {
   }
   if (ad.imageUrl && !ad.imageUrl.startsWith('/images/') && !ad.localImageUrl) {
     const localPath = await downloadImage(ad.imageUrl, ad.id);
-    if (localPath) { ad.localImageUrl = localPath; changed = true; } // preserva imageUrl original
+    if (localPath) { ad.localImageUrl = localPath; changed = true; }
+  }
+  if (ad.pageLogo && ad.pageLogo.startsWith('http') && !ad.localPageLogo) {
+    const localPath = await downloadImage(ad.pageLogo, ad.id, '-logo');
+    if (localPath) { ad.localPageLogo = localPath; changed = true; }
   }
   if (changed) {
     db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
