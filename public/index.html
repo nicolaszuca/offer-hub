@@ -88,7 +88,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* Card header */
 .card-head{display:flex;align-items:center;gap:10px;padding:12px 12px 8px}
-.card-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;letter-spacing:-.5px}
+.card-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;letter-spacing:-.5px;position:relative;overflow:hidden}
 .card-meta{flex:1;min-width:0}
 .card-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
 .card-sub{font-size:11.5px;color:var(--text2)}
@@ -117,7 +117,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .link-left{flex:1;min-width:0}
 .link-domain{font-size:10.5px;color:#65676b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .link-title{font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.link-desc{font-size:12px;color:#65676b;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px}
+.link-desc{font-size:12px;color:#65676b;overflow:hidden;white-space:nowrax;text-overflow:ellipsis;margin-top:2px}
 .cta-btn{flex-shrink:0;padding:8px 16px;background:#e4e6eb;color:#1c1e21;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s}
 .cta-btn:hover{background:#d8dadf}
 
@@ -389,15 +389,15 @@ function showApp() {
   setInterval(loadData, 30000);
 }
 
-// ── DADOS ────────────────────────────────────────────────────────────────────
-async function loadData() {
+// ── DADOS ───────────────────────────────────────────────────────────────────
+const loadData = async () => {
   setSyncStatus('loading');
   try {
     const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
     S.queue = q; S.saved = sv;
     updateBadges(); updateAdvertiserFilter(); renderGrid(); setSyncStatus('ok');
   } catch { setSyncStatus('error'); }
-}
+};
 
 function updateBadges() {
   document.getElementById('badge-queue').textContent = S.queue.length;
@@ -412,7 +412,7 @@ function setSyncStatus(st) {
   else { dot.className = 'sync-dot'; txt.textContent = 'Erro de sync'; }
 }
 
-// ── TABS / BUSCA / PAGINAÇÃO ─────────────────────────────────────────────────
+// ── TABS / BUSCA / PAGINAÇÃO ──────────────────────────────────────────────────
 function switchTab(tab) {
   S.tab = tab; S.page = 1;
   document.getElementById('nav-queue').className = 'nav-item' + (tab==='queue'?' active':'');
@@ -448,7 +448,7 @@ function getFiltered() {
   );
 }
 
-// ── RENDER ───────────────────────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────────────────
 function renderGrid() {
   const filtered = getFiltered();
   const total = filtered.length;
@@ -466,11 +466,11 @@ function renderGrid() {
   if (items.length === 0) {
     const isQ = S.tab === 'queue';
     grid.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">${isQ?'📭':'⭐'}</div>
-      <div class="empty-title">${isQ?'Fila vazia':'Nenhum ad salvo'}</div>
+      <div class="empty-icon">${isQ?\'📭\':\'⭐\'}</div>
+      <div class="empty-title">${isQ?\'Fila vazia\':\'Nenhum ad salvo\'}</div>
       <div class="empty-desc">${isQ
-        ? 'Configure a extensão Chrome e navegue pelo Facebook para capturar anúncios automaticamente.'
-        : 'Salve ads da fila para analisar com IA e acompanhar os melhores.'}</div>
+        ? \'Configure a extensão Chrome e navegue pelo Facebook para capturar anúcios automaticamente.\'
+        : \'Salve ads da fila para analisar com IA e acompanhar os melhores.\'}</div>
     </div>`;
     return;
   }
@@ -485,22 +485,24 @@ function buildCard(ad) {
   const name = ad.advertiser || 'Desconhecido';
   const initials = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
 
-  // Media — usa localImageUrl (cache local) ou imageUrl (URL original do Facebook) como fallback
   const thumbSrc = ad.localImageUrl || (ad.imageUrl?.startsWith('http') ? ad.imageUrl : '');
   let media = '';
   if (ad.videoUrl) {
-    media = `<div class="card-media"><video src="${e(ad.videoUrl)}"${thumbSrc ? ` poster="${e(thumbSrc)}"` : ''} controls preload="none"></video></div>`;
+    media = `<div class="card-media"><video src="${e(ad.videoUrl)}"${thumbSrc ? ` poster="${e(thumbSrc)}"` : ''} controls preload="metadata"></video></div>`;
   } else if (thumbSrc) {
     media = `<div class="card-media"><img src="${e(thumbSrc)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
-  // Link card — só mostra quando há conteúdo real (linkDesc) ou URL externa
   let link = '';
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
-  if (ad.linkDesc || isExternalUrl) {
+  const hasCta = ad.linkDesc || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
+  if (hasCta) {
     let domain = '';
     try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
-    const ctaLabel = ad.linkTitle || ad.ctaText || 'Saiba mais';
+    const ctaLabel = ad.ctaText || ad.linkTitle || 'Saiba mais';
+    link = `<div class="card-link">
+      <div class="link-m��ttp://x').hostname.replace('www.',''); } catch {}
+    const ctaLabel = ad.ctaText || ad.linkTitle || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
         ${domain?`<div class="link-domain">${e(domain)}</div>`:''}
@@ -548,7 +550,7 @@ function buildCard(ad) {
 
   return `<div class="hub-card" id="card-${id}">
     <div class="card-head">
-      <div class="card-avatar">${ad.pageLogo ? `<img src="${e(ad.pageLogo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none';this.parentElement.textContent='${initials}'" alt="">` : initials}</div>
+      <div class="card-avatar">${initials}${ad.pageLogo ? `<img src="${e(ad.pageLogo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.remove()" alt="">` : ''}</div>
       <div class="card-meta">
         <div class="card-name" title="${e(name)}">${e(name)}</div>
         <div class="card-sub">🌐 Patrocinado · ${e(ad.addedAt||ad.createdAt||'')}</div>
