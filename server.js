@@ -41,6 +41,27 @@ function migrateImageUrls() {
 }
 migrateImageUrls();
 
+// Migração assíncrona: baixa pageLogo para ads existentes sem localPageLogo
+async function migratePageLogos() {
+  const tables = ['queue', 'saved'];
+  for (const table of tables) {
+    const rows = db.prepare(`SELECT id, data FROM ${table}`).all();
+    for (const row of rows) {
+      try {
+        const ad = JSON.parse(row.data);
+        if (ad.pageLogo && ad.pageLogo.startsWith('http') && !ad.localPageLogo) {
+          const localPath = await downloadImage(ad.pageLogo, ad.id, '-logo');
+          if (localPath) {
+            ad.localPageLogo = localPath;
+            db.prepare(`UPDATE ${table} SET data = ? WHERE id = ?`).run(JSON.stringify(ad), ad.id);
+          }
+        }
+      } catch (_) {}
+    }
+  }
+  console.log('[migrate] migratePageLogos concluído');
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS queue (
     id TEXT PRIMARY KEY,
@@ -333,17 +354,4 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
     }
 
     const data = await response.json();
-    const analysis = data.content?.[0]?.text || 'Analise nao disponivel';
-    res.json({ analysis });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// ─── HEALTH ───────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
-
-// ─── START ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Offer Hub rodando na porta ${PORT}`);
-});
+    con
