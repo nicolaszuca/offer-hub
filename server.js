@@ -202,7 +202,23 @@ async function downloadVideo(url, id) {
 }
 
 // ─── REDIRECT RESOLVER ────────────────────────────────────────────────────────
+// Extrai URL destino do parâmetro u de l.facebook.com/l.php sem HTTP request
+function extractFromFbRedirect(url) {
+  if (!url || !url.includes('facebook.com')) return null;
+  try {
+    const u = new URL(url);
+    if (u.pathname.includes('/l.php')) {
+      const dest = u.searchParams.get('u');
+      if (dest && dest.startsWith('http') && !dest.includes('facebook.com')) return dest;
+    }
+  } catch(e) {}
+  return null;
+}
+
 async function resolveRedirect(url) {
+  // Extrai direto do parâmetro u se for l.facebook.com/l.php
+  const direct = extractFromFbRedirect(url);
+  if (direct) { console.log('[redirect] VSL extraída:', direct.slice(0,80)); return direct; }
   try {
     const res = await fetch(url, {
       method: 'GET',
