@@ -20,20 +20,17 @@ chrome.storage.onChanged.addListener((changes) => {
 // ─── LISTEN FOR XHR PAYLOADS ──────────────────────────────────────────────────
 window.addEventListener("message", (event) => {
   if (!event.data || event.data.type !== MSG_ID) return;
-  handlePayload(event.data.payload, event.data.videoUrls || [], event.data.adLibIds || [], event.data.pageIds || []);
+  handlePayload(event.data.payload, event.data.videoUrls || [], event.data.adLibIds || [], event.data.pageIds || [], event.data.imageUrls || [], event.data.rawCtaUrl || null);
 });
 
 // ─── PARSE NDJSON ─────────────────────────────────────────────────────────────
-// Facebook returns newline-delimited JSON (one JSON object per line)
 function parseNDJSON(text) {
   const items = [];
   const lines = text.split("\n");
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || !trimmed.startsWith("{")) continue;
-    try {
-      items.push(JSON.parse(trimmed));
-    } catch {}
+    try { items.push(JSON.parse(trimmed)); } catch {}
   }
   return items;
 }
@@ -41,31 +38,21 @@ function parseNDJSON(text) {
 // ─── FIND SPONSORED NODES ─────────────────────────────────────────────────────
 function findSponsoredNodes(items) {
   const nodes = [];
-
   function checkNode(node) {
     if (!node || typeof node !== "object") return;
     const sections = node.comet_sections;
     if (!sections) return;
-    if (JSON.stringify(sections).includes("SponsoredData")) {
-      nodes.push(node);
-    }
+    if (JSON.stringify(sections).includes("SponsoredData")) nodes.push(node);
   }
-
   for (const item of items) {
     try {
-      // Pattern 1: data.node (single post)
       if (item?.data?.node) checkNode(item.data.node);
-
-      // Pattern 2: data.viewer.news_feed.edges (feed)
       const edges = item?.data?.viewer?.news_feed?.edges;
       if (Array.isArray(edges)) edges.forEach(e => checkNode(e?.node));
-
-      // Pattern 3: data.viewer.home_stream.edges
       const streamEdges = item?.data?.viewer?.home_stream?.edges;
       if (Array.isArray(streamEdges)) streamEdges.forEach(e => checkNode(e?.node));
     } catch {}
   }
-
   return nodes;
 }
 
@@ -108,74 +95,61 @@ function extractAd(node) {
 
     // ── Ad Library ID ────────────────────────────────────────────────────────
     const adLibraryId =
-      deepGet(node, "ad_id") ||
-      deepGet(node, "adLibraryId") ||
-      deepGet(node, "ad_archive_id") ||
-      deepGet(node, "adArchiveId") ||
-      deepGet(sections, "ad_id") ||
-      deepGet(sections, "adLibraryId") ||
-      deepGet(sections, "ad_archive_id") ||
-      deepGet(contentStory, "ad_id") ||
-      deepGet(contentStory, "adLibraryId") ||
-      deepGet(contentStory, "ad_archive_id") ||
-      "";
+      deepGet(node, "ad_id") || deepGet(node, "adLibraryId") || deepGet(node, "ad_archive_id") || deepGet(node, "adArchiveId") ||
+      deepGet(sections, "ad_id") || deepGet(sections, "adLibraryId") || deepGet(sections, "ad_archive_id") ||
+      deepGet(contentStory, "ad_id") || deepGet(contentStory, "adLibraryId") || deepGet(contentStory, "ad_archive_id") || "";
 
     // ── Copy text ────────────────────────────────────────────────────────────
-    const allTexts = deepGetAll(contentStory, "text")
-      .filter(t => typeof t === "string" && t.length > 5)
-      .sort((a, b) => b.length - a.length);
+    const allTexts = deepGetAll(contentStory, "text").filter(t => typeof t === "string" && t.length > 5).sort((a, b) => b.length - a.length);
     const postText = allTexts[0] || "";
 
     // ── Link card (footer) ───────────────────────────────────────────────────
-    const linkPreview =
-      deepGet(contentStory, "link_preview") ||
-      deepGet(contentStory, "linked_media") ||
-      {};
+    const linkPreview = deepGet(contentStory, "link_preview") || deepGet(contentStory, "linked_media") || {};
     const fouterTitle =
       (typeof linkPreview?.title === "string" ? linkPreview.title : "") ||
       (typeof linkPreview?.name === "string" ? linkPreview.name : "") ||
-      deepGetAll(contentStory, "title").find(t => typeof t === "string" && t.length > 2) ||
-      "";
+      deepGetAll(contentStory, "title").find(t => typeof t === "string" && t.length > 2) || "";
     const fouterDesc =
       (typeof linkPreview?.description === "string" ? linkPreview.description : "") ||
-      deepGetAll(contentStory, "description").find(d => typeof d === "string" && d.length > 2) ||
-      "";
+      deepGetAll(contentStory, "description").find(d => typeof d === "string" && d.length > 2) || "";
     const fouterUrl =
       linkPreview?.url ||
       deepGet(contentStory, "url") ||
+      deepGet(contentStory, "call_to_action")?.value?.link ||
+      deepGet(node, "call_to_action")?.value?.link ||
+      deepGetAll(contentStory, "call_to_action").find(c => c?.value?.link)?.value?.link ||
+      deepGet(contentStory, "cta_link") ||
+      deepGet(node, "cta_link") ||
       "";
 
     // ── Creative image ───────────────────────────────────────────────────────
     const photoImages = deepGetAll(contentStory, "photo_image");
-    const imageUri = photoImages.find(p => p?.uri)?.uri || "";
+    const resizableImages = deepGetAll(contentStory, "resizable_image");
+    const previewImages = deepGetAll(contentStory, "preview_image");
+    const imageUri =
+      photoImages.find(p => p?.uri)?.uri ||
+      resizableImages.find(p => p?.uri)?.uri ||
+      previewImages.find(p => p?.uri)?.uri ||
+      deepGet(contentStory, "image")?.uri ||
+      deepGetAll(node, "image").find(p => p?.uri)?.uri || "";
 
     // ── Video ─────────────────────────────────────────────────────────────────
     const videoUrl =
-      deepGet(node, "playable_url_quality_hd", 20) ||
-      deepGet(node, "playable_url", 20) ||
-      deepGet(node, "browser_native_hd_url", 20) ||
-      deepGet(node, "browser_native_sd_url", 20) ||
-      deepGet(node, "stream_url", 20) ||
-      "";
+      deepGet(node, "playable_url_quality_hd", 20) || deepGet(node, "playable_url", 20) ||
+      deepGet(node, "browser_native_hd_url", 20) || deepGet(node, "browser_native_sd_url", 20) ||
+      deepGet(node, "stream_url", 20) || "";
     const thumbnailUri =
       deepGet(contentStory, "thumbnailImage")?.uri ||
       deepGet(contentStory, "preferred_thumbnail")?.image?.uri ||
       deepGet(sections, "thumbnailImage")?.uri ||
       deepGet(node, "thumbnailImage")?.uri ||
-      deepGet(node, "preferred_thumbnail")?.image?.uri ||
-      "";
+      deepGet(node, "preferred_thumbnail")?.image?.uri || "";
 
     // ── CTA ───────────────────────────────────────────────────────────────────
-    const ctaText =
-      deepGet(contentStory, "cta_text") ||
-      deepGet(contentStory, "call_to_action_text") ||
-      "";
+    const ctaText = deepGet(contentStory, "cta_text") || deepGet(contentStory, "call_to_action_text") || "";
 
     // ── Unique ID ─────────────────────────────────────────────────────────────
-    const uniqueId = adLibraryId
-      ? `fb_${adLibraryId}`
-      : `fb_${pageId}_${Date.now()}`;
-
+    const uniqueId = adLibraryId ? `fb_${adLibraryId}` : `fb_${pageId}_${Date.now()}`;
     if (seenIds.has(uniqueId)) return null;
 
     if (videoUrl) console.log("[OfferHub] 🎬 Video encontrado:", videoUrl.slice(0, 80));
@@ -184,15 +158,12 @@ function extractAd(node) {
     return {
       id: uniqueId,
       advertiser: pageName || "Desconhecido",
-      pageId,
-      pageLogo,
-      adLibraryId,
+      pageId, pageLogo, adLibraryId,
       copy: postText,
       linkTitle: fouterTitle,
       linkDesc: fouterDesc,
-      snapshotUrl: adLibraryId
-        ? `https://www.facebook.com/ads/library/?id=${adLibraryId}`
-        : (fouterUrl || ""),
+      ctaUrl: fouterUrl || "",
+      snapshotUrl: adLibraryId ? `https://www.facebook.com/ads/library/?id=${adLibraryId}` : (fouterUrl || ""),
       imageUrl: imageUri || thumbnailUri,
       videoUrl,
       platforms: ["facebook", "instagram"],
@@ -209,70 +180,64 @@ function extractAd(node) {
 // ─── SEND TO HUB ──────────────────────────────────────────────────────────────
 async function sendToHub(ads) {
   try {
-    if (!hubUrl) {
-      console.warn("[OfferHub] Hub URL não configurada. Configure no popup da extensão.");
-      return;
-    }
-
+    if (!hubUrl) { console.warn("[OfferHub] Hub URL não configurada."); return; }
     const { hubToken } = await chrome.storage.sync.get(["hubToken"]);
     const token = hubToken || "no-auth";
-
-    chrome.runtime.sendMessage(
-      { type: "SEND_TO_HUB", hubUrl, token, ads },
-      (response) => {
-        try {
-          if (chrome.runtime.lastError) return;
-          if (response?.ok) {
-            capturedCount += ads.length;
-            try { chrome.storage.sync.set({ capturedCount }); } catch(_) {}
-            try { chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length }); } catch(_) {}
-            console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
-          } else {
-            console.warn("[OfferHub] Erro ao enviar:", response?.error);
-          }
-        } catch(_) {}
-      }
-    );
-  } catch(e) {
-    // Extension context invalidated após recarga — ignorar silenciosamente
-  }
+    chrome.runtime.sendMessage({ type: "SEND_TO_HUB", hubUrl, token, ads }, (response) => {
+      try {
+        if (chrome.runtime.lastError) return;
+        if (response?.ok) {
+          capturedCount += ads.length;
+          try { chrome.storage.sync.set({ capturedCount }); } catch(_) {}
+          try { chrome.runtime.sendMessage({ type: "ADS_CAPTURED", count: capturedCount, newAds: ads.length }); } catch(_) {}
+          console.log(`[OfferHub] ✅ ${ads.length} ad(s) enviado(s) para o hub`);
+        } else { console.warn("[OfferHub] Erro ao enviar:", response?.error); }
+      } catch(_) {}
+    });
+  } catch(e) {}
 }
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
-function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds = []) {
+function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds = [], rawImageUrls = [], rawCtaUrl = null) {
   try {
     const items = parseNDJSON(payload);
     const sponsoredNodes = findSponsoredNodes(items);
     if (sponsoredNodes.length === 0) return;
 
     const availableVideos = [...rawVideoUrls];
+    const availableImages = [...rawImageUrls];
     const availableAdLibIds = [...rawAdLibIds];
     const availablePageIds = [...rawPageIds];
 
-    const ads = sponsoredNodes
-      .map(node => {
-        const ad = extractAd(node);
-        if (!ad) return null;
-        if (!ad.videoUrl && availableVideos.length > 0) {
-          ad.videoUrl = availableVideos.shift();
-          console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
-        }
-        if (!ad.adLibraryId && availableAdLibIds.length > 0) {
-          ad.adLibraryId = availableAdLibIds.shift();
-          console.log("[OfferHub] 📚 adLibraryId via raw:", ad.advertiser, ad.adLibraryId);
-        }
-        if (!ad.pageId && availablePageIds.length > 0) {
-          ad.pageId = availablePageIds.shift();
-          console.log("[OfferHub] 🏷️ pageId via raw:", ad.advertiser, ad.pageId);
-        }
-        return ad;
-      })
-      .filter(Boolean)
-      .filter(ad => {
-        if (seenIds.has(ad.id)) return false;
-        seenIds.add(ad.id);
-        return true;
-      });
+    const ads = sponsoredNodes.map(node => {
+      const ad = extractAd(node);
+      if (!ad) return null;
+      if (!ad.videoUrl && availableVideos.length > 0) {
+        ad.videoUrl = availableVideos.shift();
+        console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
+      }
+      if (!ad.imageUrl && availableImages.length > 0) {
+        ad.imageUrl = availableImages.shift();
+        console.log("[OfferHub] 🖼️ Imagem via raw URL:", ad.advertiser, ad.imageUrl?.slice(0, 60));
+      }
+      if (!ad.adLibraryId && availableAdLibIds.length > 0) {
+        ad.adLibraryId = availableAdLibIds.shift();
+        console.log("[OfferHub] 📚 adLibraryId via raw:", ad.advertiser, ad.adLibraryId);
+      }
+      if (!ad.pageId && availablePageIds.length > 0) {
+        ad.pageId = availablePageIds.shift();
+        console.log("[OfferHub] 🏷️ pageId via raw:", ad.advertiser, ad.pageId);
+      }
+      if (!ad.ctaUrl && rawCtaUrl) {
+        ad.ctaUrl = rawCtaUrl;
+        console.log("[OfferHub] 🔗 ctaUrl via raw:", ad.advertiser, rawCtaUrl.slice(0, 60));
+      }
+      return ad;
+    }).filter(Boolean).filter(ad => {
+      if (seenIds.has(ad.id)) return false;
+      seenIds.add(ad.id);
+      return true;
+    });
 
     if (ads.length > 0) {
       console.log(`[OfferHub] 🎯 ${ads.length} anúncio(s) capturado(s):`, ads.map(a => a.advertiser));
