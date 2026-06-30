@@ -112,4 +112,25 @@
     this.addEventListener("load", function() { callback(this); });
     return origSend.apply(this, arguments);
   };
+
+  // Intercepta fetch() API — usada para Reels e outros conteudos dinamicos
+  const origFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const response = await origFetch.apply(this, args);
+    try {
+      const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
+      if (resRegexs.some(r => r.test(url))) {
+        const ct = response.headers.get('content-type') || '';
+        const clone = response.clone();
+        clone.text().then(text => {
+          if (!text) return;
+          console.log("[OfferHub] GraphQL fetch | ct:", ct.substring(0, 40), "| sponsor:", text.includes("SponsoredData"));
+          if (ct.includes("text/html") || ct.includes("x-ndjson") || ct.includes("json")) {
+            postPayload(text);
+          }
+        }).catch(() => {});
+      }
+    } catch(e) {}
+    return response;
+  };
 })();
