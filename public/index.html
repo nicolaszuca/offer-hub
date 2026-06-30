@@ -500,7 +500,7 @@ function buildCard(ad) {
   const hasCta = ad.linkTitle || ad.linkDesc || ad.ctaUrl || ad.vslUrl || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
     let domain = '';
-    const bestUrl = ad.vslUrl || ad.ctaUrl || ad.snapshotUrl || '';
+    const bestUrl = ad.vslUrl || decodeFbRedirect(ad.ctaUrl) || ad.snapshotUrl || '';
     try { domain = new URL(bestUrl || 'http://x').hostname.replace('www.','').replace(/^l\.facebook\.com$/, ''); } catch {}
     const ctaLabel = ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
@@ -566,6 +566,20 @@ function buildCard(ad) {
     ${link}
     ${analysis}
   </div>`;
+}
+
+// Extrai URL destino de l.facebook.com/l.php?u=URL sem passar pelo redirect
+function decodeFbRedirect(url) {
+  if (!url) return url;
+  try {
+    if (!url.includes('l.facebook.com') && !url.includes('/l.php')) return url;
+    const u = new URL(url);
+    if (u.pathname.includes('/l.php')) {
+      const dest = u.searchParams.get('u');
+      if (dest && dest.startsWith('http') && !dest.includes('facebook.com')) return dest;
+    }
+  } catch(e) {}
+  return url;
 }
 
 function e(s) {
