@@ -488,20 +488,8 @@ function buildCard(ad) {
   // Media — usa localImageUrl (cache local) ou imageUrl (URL original do Facebook) como fallback
   const thumbSrc = ad.localImageUrl || (ad.imageUrl?.startsWith('http') ? ad.imageUrl : '');
   let media = '';
-  if (ad.videoUrl && thumbSrc) {
-    // Tem vídeo E imagem: mostra imagem por padrão + botão para expandir o vídeo
-    // Isso evita mostrar vídeos pretos/estáticos (still ads) como player por padrão
-    const vid = e(ad.videoUrl);
-    const img = e(thumbSrc);
-    media = `<div class="card-media card-media-hybrid">
-      <img src="${img}" loading="lazy" onerror="this.parentElement.style.display='none'" alt="" class="media-img-main">
-      <button class="btn-play-video" onclick="
-        const wrap=this.closest('.card-media-hybrid');
-        wrap.innerHTML='<video src=\\'${vid}\\' controls autoplay preload=\\'auto\\' style=\\'width:100%;display:block;max-height:480px;background:#000\\'></video>';
-      " title="Ver vídeo">▶ Vídeo</button>
-    </div>`;
-  } else if (ad.videoUrl) {
-    media = `<div class="card-media"><video src="${e(ad.videoUrl)}" controls preload="metadata" style="width:100%;display:block;max-height:480px;background:#000"></video></div>`;
+  if (ad.videoUrl) {
+    media = `<div class="card-media"><video src="${e(ad.videoUrl)}"${thumbSrc ? ` poster="${e(thumbSrc)}"` : ''} controls preload="metadata"></video></div>`;
   } else if (thumbSrc) {
     media = `<div class="card-media"><img src="${e(thumbSrc)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
