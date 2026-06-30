@@ -497,10 +497,10 @@ function buildCard(ad) {
   // Link card — mostra quando há linkTitle, linkDesc, URL externa OU ctaText
   let link = '';
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
-  const hasCta = ad.linkTitle || ad.linkDesc || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
+  const hasCta = ad.linkTitle || ad.linkDesc || ad.ctaUrl || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
     let domain = '';
-    try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
+    try { domain = new URL(ad.ctaUrl || ad.snapshotUrl || 'http://x').hostname.replace('www.','').replace(/^l\.facebook\.com$/, ''); } catch {}
     const ctaLabel = ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
@@ -508,7 +508,7 @@ function buildCard(ad) {
         ${ad.linkTitle?`<div class="link-title">${e(ad.linkTitle)}</div>`:''}
         ${ad.linkDesc?`<div class="link-desc">${e(ad.linkDesc)}</div>`:''}
       </div>
-      ${ctaLabel&&ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''}
+      ${ctaLabel?(()=>{const href=ad.ctaUrl||ad.snapshotUrl||'';return href?`<a href="${e(href)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''})():''}
     </div>`;
   }
 
