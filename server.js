@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
-// ─── MEDIA DIRS ───────────────────────────────────────────────────────────────
+// âââ MEDIA DIRS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const VIDEOS_DIR = process.env.VIDEOS_DIR || path.join(__dirname, 'public', 'videos');
 if (!fs.existsSync(VIDEOS_DIR)) fs.mkdirSync(VIDEOS_DIR, { recursive: true });
 
@@ -16,10 +16,10 @@ const PORT = process.env.PORT || 3000;
 const PASSWORD = process.env.HUB_PASSWORD || '';
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
 
-// ─── DATABASE ─────────────────────────────────────────────────────────────────
+// âââ DATABASE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const db = new Database(process.env.DB_PATH || 'hub.db');
 
-// Migração: ads que têm /images/... em imageUrl → move para localImageUrl e limpa imageUrl
+// MigraÃ§Ã£o: ads que tÃªm /images/... em imageUrl â move para localImageUrl e limpa imageUrl
 function migrateImageUrls() {
   const tables = ['queue', 'saved'];
   for (const table of tables) {
@@ -39,9 +39,9 @@ function migrateImageUrls() {
     }
   }
 }
-// migrateImageUrls() é chamada após db.exec() criar as tabelas (ver abaixo)
+// migrateImageUrls() Ã© chamada apÃ³s db.exec() criar as tabelas (ver abaixo)
 
-// Migração assíncrona: baixa pageLogo para ads existentes sem arquivo local
+// MigraÃ§Ã£o assÃ­ncrona: baixa pageLogo para ads existentes sem arquivo local
 async function migratePageLogos() {
   const tables = ['queue', 'saved'];
   for (const table of tables) {
@@ -60,7 +60,7 @@ async function migratePageLogos() {
       } catch (_) {}
     }
   }
-  console.log('[migrate] migratePageLogos concluído');
+  console.log('[migrate] migratePageLogos concluÃ­do');
 }
 
 db.exec(`
@@ -77,10 +77,10 @@ db.exec(`
   );
 `);
 
-// Executa migrações após as tabelas existirem
+// Executa migraÃ§Ãµes apÃ³s as tabelas existirem
 migrateImageUrls();
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+// âââ AUTH âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const AUTH_ENABLED = PASSWORD.length > 0;
 const getToken = () =>
   AUTH_ENABLED
@@ -95,7 +95,7 @@ function auth(req, res, next) {
   next();
 }
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
+// âââ CORS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
@@ -104,16 +104,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
+// âââ MIDDLEWARE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/videos', express.static(VIDEOS_DIR));
 
-// Serve imagens — se arquivo local sumir (redeploy), tenta re-baixar da URL original
+// Serve imagens â se arquivo local sumir (redeploy), tenta re-baixar da URL original
 app.use('/images', async (req, res, next) => {
   const filePath = path.join(IMAGES_DIR, req.path);
   if (fs.existsSync(filePath)) return next(); // arquivo existe, serve normalmente
-  // Detecta se é logo (-logo) ou imagem principal
+  // Detecta se Ã© logo (-logo) ou imagem principal
   const baseName = path.basename(req.path, path.extname(req.path));
   const isLogo = baseName.endsWith('-logo');
   const id = isLogo ? baseName.slice(0, -5) : baseName;
@@ -149,7 +149,7 @@ app.use('/images', async (req, res, next) => {
 });
 app.use('/images', express.static(IMAGES_DIR));
 
-// ─── AUTH ROUTE ───────────────────────────────────────────────────────────────
+// âââ AUTH ROUTE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.post('/api/auth', (req, res) => {
   if (!AUTH_ENABLED) return res.json({ token: 'no-auth' });
   const { password } = req.body || {};
@@ -159,13 +159,13 @@ app.post('/api/auth', (req, res) => {
   res.json({ token: getToken() });
 });
 
-// ─── QUEUE ────────────────────────────────────────────────────────────────────
+// âââ QUEUE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.get('/api/queue', auth, (req, res) => {
   const rows = db.prepare('SELECT id, data FROM queue ORDER BY rowid DESC').all();
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id })));
 });
 
-// ─── IMAGE DOWNLOAD ───────────────────────────────────────────────────────────
+// âââ IMAGE DOWNLOAD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function downloadImage(url, id, suffix = '') {
   try {
     const fname = suffix ? `${id}${suffix}.jpg` : `${id}.jpg`;
@@ -185,7 +185,7 @@ async function downloadImage(url, id, suffix = '') {
   }
 }
 
-// ─── VIDEO DOWNLOAD ───────────────────────────────────────────────────────────
+// âââ VIDEO DOWNLOAD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function downloadVideo(url, id) {
   try {
     const filePath = path.join(VIDEOS_DIR, `${id}.mp4`);
@@ -204,8 +204,8 @@ async function downloadVideo(url, id) {
   }
 }
 
-// ─── REDIRECT RESOLVER ────────────────────────────────────────────────────────
-// Extrai URL destino de l.facebook.com/l.php?u=URL (parâmetro u) sem precisar de HTTP request
+// âââ REDIRECT RESOLVER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Extrai URL destino de l.facebook.com/l.php?u=URL (parÃ¢metro u) sem precisar de HTTP request
 function extractFromFbRedirect(url) {
   if (!url || !url.includes('facebook.com')) return null;
   try {
@@ -220,12 +220,12 @@ function extractFromFbRedirect(url) {
   return null;
 }
 
-// Segue o redirect do l.facebook.com/l.php?u=... até a URL real da VSL/landing page
+// Segue o redirect do l.facebook.com/l.php?u=... atÃ© a URL real da VSL/landing page
 async function resolveRedirect(url) {
-  // Tenta extrair direto do parâmetro u (funciona quando u=https%3A%2F%2F...)
+  // Tenta extrair direto do parÃ¢metro u (funciona quando u=https%3A%2F%2F...)
   const direct = extractFromFbRedirect(url);
   if (direct) {
-    console.log('[redirect] VSL extraída do parâmetro u:', direct.slice(0, 80));
+    console.log('[redirect] VSL extraÃ­da do parÃ¢metro u:', direct.slice(0, 80));
     return direct;
   }
   // Para tokens opacos (u=AUBv...), o Facebook retorna HTML com a URL destino
@@ -246,13 +246,13 @@ async function resolveRedirect(url) {
       console.log('[redirect] VSL via HTTP redirect:', finalUrl.slice(0, 80));
       return finalUrl;
     }
-    // Parseia o HTML da página de aviso do Facebook para extrair a URL destino
+    // Parseia o HTML da pÃ¡gina de aviso do Facebook para extrair a URL destino
     const html = await res.text();
     const isFbPage = finalUrl.includes('facebook.com') || finalUrl.includes('l.php');
     if (isFbPage && html) {
-      // A página de aviso contém a URL destino em href ou como texto
+      // A pÃ¡gina de aviso contÃ©m a URL destino em href ou como texto
       const patterns = [
-        // <a href="https://external..."> — link de confirmação da página de aviso
+        // <a href="https://external..."> â link de confirmaÃ§Ã£o da pÃ¡gina de aviso
         /href="(https?:\/\/(?!(?:www\.)?(?:l\.)?facebook\.com)[^"]{15,800})"/gi,
         // data-url="https://..." em elementos de aviso
         /data-url="(https?:\/\/(?!(?:www\.)?(?:l\.)?facebook\.com)[^"]{15,800})"/gi,
@@ -264,7 +264,7 @@ async function resolveRedirect(url) {
         while ((m = pattern.exec(html)) !== null) {
           const candidate = m[1].replace(/&amp;/g, '&');
           if (!candidate.includes('facebook.com') && candidate.startsWith('http')) {
-            console.log('[redirect] VSL extraída do HTML:', candidate.slice(0, 80));
+            console.log('[redirect] VSL extraÃ­da do HTML:', candidate.slice(0, 80));
             return candidate;
           }
         }
@@ -277,10 +277,10 @@ async function resolveRedirect(url) {
   }
 }
 
-// CTAs que indicam doação, engajamento social ou ação sem landing page — ignorar
+// CTAs que indicam doaÃ§Ã£o, engajamento social ou aÃ§Ã£o sem landing page â ignorar
 const BLOCKED_CTA = ['donate', 'like', 'follow', 'see more', 'send message', 'call now', 'directions', 'save'];
 
-// Retorna true se o anúncio tem CTA levando para página externa (VSL/landing page)
+// Retorna true se o anÃºncio tem CTA levando para pÃ¡gina externa (VSL/landing page)
 function hasExternalCta(ad) {
   const ctaRaw = (ad.ctaText || ad.linkTitle || '').toLowerCase().trim();
   if (ctaRaw && BLOCKED_CTA.some(b => ctaRaw === b || ctaRaw.startsWith(b + ' '))) return false;
@@ -295,10 +295,10 @@ app.post('/api/queue', auth, async (req, res) => {
   const ads = Array.isArray(req.body) ? req.body : [req.body];
   const insert = db.prepare('INSERT OR IGNORE INTO queue (id, data) VALUES (?, ?)');
 
-  // Filtra apenas anúncios com CTA externo (landing page / VSL)
+  // Filtra apenas anÃºncios com CTA externo (landing page / VSL)
   const filtered = ads.filter(ad => hasExternalCta(ad));
   const skipped = ads.length - filtered.length;
-  if (skipped > 0) console.log(`[queue] ${skipped} anúncio(s) ignorado(s) (sem link externo)`);
+  if (skipped > 0) console.log(`[queue] ${skipped} anÃºncio(s) ignorado(s) (sem link externo)`);
 
   const prepared = filtered.map(ad => {
     if (!ad.id) ad.id = crypto.randomUUID();
@@ -354,17 +354,25 @@ app.post('/api/queue', auth, async (req, res) => {
 });
 
 app.delete('/api/queue/:id', auth, (req, res) => {
-  db.prepare('DELETE FROM queue WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM queue WHERE id = ?').run(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.delete('/api/queue', auth, (req, res) => {
-  db.prepare('DELETE FROM queue').run();
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM queue').run();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
-// ─── SAVED ────────────────────────────────────────────────────────────────────
-app.get('/api/saved', auth, (req, res) => {
+// âââ SAVED ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+Gapp.get('/api/saved', auth, (req, res) => {
   const rows = db.prepare('SELECT id, data, analysis FROM saved ORDER BY saved_at DESC').all();
   res.json(rows.map(r => ({ ...JSON.parse(r.data), id: r.id, analysis: r.analysis })));
 });
@@ -398,7 +406,9 @@ app.post('/api/saved', auth, async (req, res) => {
     if (vslUrl) { ad.vslUrl = vslUrl; changed = true; console.log(`[redirect] VSL resolvida: ${vslUrl.slice(0, 80)}`); }
   }
   if (changed) {
-    db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+    try {
+      db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+    } catch (_) {}
   }
 });
 
@@ -409,16 +419,24 @@ app.patch('/api/saved/:id', auth, (req, res) => {
 });
 
 app.delete('/api/saved/:id', auth, (req, res) => {
-  db.prepare('DELETE FROM saved WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM saved WHERE id = ?').run(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.delete('/api/saved', auth, (req, res) => {
-  db.prepare('DELETE FROM saved').run();
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM saved').run();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
-// ─── ANALYZE ──────────────────────────────────────────────────────────────────
+// âââ ANALYZE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.post('/api/analyze', auth, async (req, res) => {
   const { ad } = req.body || {};
   if (!ad) return res.status(400).json({ error: 'Ad nao fornecido' });
@@ -428,11 +446,11 @@ app.post('/api/analyze', auth, async (req, res) => {
 
 ANUNCIANTE:${ad.advertiser || 'Desconhecido'}
 NICHO: ${ad.niche || 'nao informado'}
-COPY PRINCIPAL:
+COPY PRJNCIPAL:
 ${ad.copy || '(sem copy)'}
 
 TITULO DO LINK: ${ad.linkTitle || '(sem titulo)'}
-DESCRICAO: ${ad.linkDesc || '(sem descricao)'}
+DESCRICAO: ${ad.linkDesc || '(sem descricao)"}
 
 Forneca a analise EXATAMENTE neste formato:
 
@@ -457,7 +475,7 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-hclaude-4-5-20251001',
         max_tokens: 900,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -469,19 +487,39 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
     }
 
     const data = await response.json();
-    const analysis = data.content?.[0]?.text || 'Analise nao disponivel';
+    const analysis = data.content?.[0]?.text || 'Analise nao disponibl';
     res.json({ analysis });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// ─── HEALTH ───────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.1.0' }));
+// âââ CLEANUP âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Apaga imagens/videos do disco e limpa a fila (libera espaÃ§o quando disco cheio)
+app.post('/api/cleanup', auth, (req, res) => {
+  let deleted = 0;
+  for (const dir of [IMAGES_DIR, VIDEOS_DIR]) {
+    try {
+      const files = fs.readdirSync(dir);
+      for (const f of files) {
+        try { fs.unlinkSync(path.join(dir, f)); deleted++; } catch (_) {}
+      }
+    } catch (_) {}
+  }
+  try {
+    db.prepare('DELETE FROM queue').run();
+  } catch (e) {
+    return res.json({ ok: false, filesDeleted: deleted, error: e.message });
+  }
+  res.json({ ok: true, filesDeleted: deleted });
+});
 
-// ─── START ────────────────────────────────────────────────────────────────────
+// âââ HEALTH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.2.0' }));
+
+// âââ START âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.listen(PORT, () => {
   console.log(`Offer Hub rodando na porta ${PORT}`);
-  // Baixa pageLogos em background após inicializar
+  // Baixa pageLogos em background apÃ³s inicializar
   setTimeout(() => migratePageLogos().catch(console.error), 3000);
 });
