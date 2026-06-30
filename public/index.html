@@ -499,7 +499,8 @@ function buildCard(ad) {
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
   const hasCta = ad.linkTitle || ad.linkDesc || ad.ctaUrl || ad.vslUrl || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
-    const bestUrl = ad.vslUrl || decodeFbRedirect(ad.ctaUrl) || ad.snapshotUrl || '';
+    const directCtaUrl = (ad.ctaUrl && !ad.ctaUrl.includes('facebook.com') && ad.ctaUrl.startsWith('http')) ? ad.ctaUrl : '';
+    const bestUrl = ad.vslUrl || decodeFbRedirect(ad.ctaUrl) || directCtaUrl || ad.snapshotUrl || '';
     // Domínio: usa campo nativo do Facebook, ou extrai da URL real (nunca exibe facebook.com)
     let domain = ad.linkDomain || '';
     if (!domain) {
