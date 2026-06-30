@@ -233,6 +233,18 @@ async function resolveRedirect(url) {
     if (finalUrl && !finalUrl.includes('facebook.com') && finalUrl.startsWith('http')) {
       return finalUrl;
     }
+    // Token opaco: parseia HTML da pagina de aviso para extrair URL destino
+    const html = await res.text();
+    if (html) {
+      const re = /href="(https?:\/\/[^"]{15,600})"/gi;
+      let m;
+      while ((m = re.exec(html)) !== null) {
+        const u = m[1].replace(/&amp;/g, '&');
+        if (!u.includes('facebook') && u.startsWith('http')) {
+          return u;
+        }
+      }
+    }
     return null;
   } catch (e) {
     console.warn('[redirect] Erro ao resolver:', e.message);
