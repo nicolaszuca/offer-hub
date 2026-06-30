@@ -261,7 +261,8 @@ function hasExternalCta(ad) {
   if (ctaRaw && BLOCKED_CTA.some(b => ctaRaw === b || ctaRaw.startsWith(b + ' '))) return false;
   if (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com')) return true;
   if (ad.linkDesc || ad.linkTitle) return true;
-  if (ad.ctaText && ad.ctaText.trim().length > 0) return true;
+  if (ad.ctaText && ad.ctaText.trim().length > 0) return true; 
+     if (ad.ctaUrl) return true;
   return false;
 }
 
