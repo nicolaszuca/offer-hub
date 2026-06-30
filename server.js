@@ -201,6 +201,29 @@ async function downloadVideo(url, id) {
   }
 }
 
+// ─── REDIRECT RESOLVER ────────────────────────────────────────────────────────
+async function resolveRedirect(url) {
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    const finalUrl = res.url;
+    if (finalUrl && !finalUrl.includes('facebook.com') && finalUrl.startsWith('http')) {
+      return finalUrl;
+    }
+    return null;
+  } catch (e) {
+    console.warn('[redirect] Erro ao resolver:', e.message);
+    return null;
+  }
+}
+
 // CTAs que indicam doação, engajamento social ou ação sem landing page — ignorar
 const BLOCKED_CTA = ['donate', 'like', 'follow', 'see more', 'send message', 'call now', 'directions', 'save'];
 
@@ -259,6 +282,15 @@ app.post('/api/queue', auth, async (req, res) => {
         }
       });
     }
+    if (ad.ctaUrl && !ad.vslUrl) {
+      resolveRedirect(ad.ctaUrl).then(vslUrl => {
+        if (vslUrl) {
+          ad.vslUrl = vslUrl;
+          db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
+          console.log('[redirect] VSL resolvida:', vslUrl.slice(0, 80));
+        }
+      });
+    }
   }
 });
 
@@ -296,6 +328,10 @@ app.post('/api/saved', auth, async (req, res) => {
   if (ad.pageLogo && ad.pageLogo.startsWith('http') && !ad.localPageLogo) {
     const localPath = await downloadImage(ad.pageLogo, ad.id, '-logo');
     if (localPath) { ad.localPageLogo = localPath; changed = true; }
+  }
+  if (ad.ctaUrl && !ad.vslUrl) {
+    const vslUrl = await resolveRedirect(ad.ctaUrl);
+    if (vslUrl) { ad.vslUrl = vslUrl; changed = true; console.log('[redirect] VSL resolvida:', vslUrl.slice(0, 80)); }
   }
   if (changed) {
     db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
