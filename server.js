@@ -39,9 +39,9 @@ function migrateImageUrls() {
     }
   }
 }
-migrateImageUrls();
+// migrateImageUrls() é chamada após db.exec() criar as tabelas (ver abaixo)
 
-// Migração assíncrona: baixa pageLogo para ads existentes sem localPageLogo
+// Migração assíncrona: baixa pageLogo para ads existentes sem arquivo local
 async function migratePageLogos() {
   const tables = ['queue', 'saved'];
   for (const table of tables) {
@@ -76,6 +76,9 @@ db.exec(`
     saved_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 `);
+
+// Executa migrações após as tabelas existirem
+migrateImageUrls();
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 const AUTH_ENABLED = PASSWORD.length > 0;
@@ -202,23 +205,30 @@ async function downloadVideo(url, id) {
 }
 
 // ─── REDIRECT RESOLVER ────────────────────────────────────────────────────────
-// Extrai URL destino do parâmetro u de l.facebook.com/l.php sem HTTP request
+// Extrai URL destino de l.facebook.com/l.php?u=URL (parâmetro u) sem precisar de HTTP request
 function extractFromFbRedirect(url) {
   if (!url || !url.includes('facebook.com')) return null;
   try {
     const u = new URL(url);
     if (u.pathname.includes('/l.php')) {
       const dest = u.searchParams.get('u');
-      if (dest && dest.startsWith('http') && !dest.includes('facebook.com')) return dest;
+      if (dest && dest.startsWith('http') && !dest.includes('facebook.com')) {
+        return dest;
+      }
     }
   } catch(e) {}
   return null;
 }
 
+// Segue o redirect do l.facebook.com/l.php?u=... até a URL real da VSL/landing page
 async function resolveRedirect(url) {
-  // Extrai direto do parâmetro u se for l.facebook.com/l.php
+  // Tenta extrair direto do parâmetro u (funciona quando u=https%3A%2F%2F...)
   const direct = extractFromFbRedirect(url);
-  if (direct) { console.log('[redirect] VSL extraída:', direct.slice(0,80)); return direct; }
+  if (direct) {
+    console.log('[redirect] VSL extraída do parâmetro u:', direct.slice(0, 80));
+    return direct;
+  }
+  // Para tokens opacos (u=AUBv...), o Facebook retorna HTML com a URL destino
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -226,28 +236,43 @@ async function resolveRedirect(url) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
     const finalUrl = res.url;
+    // Se o HTTP redirect funcionou diretamente
     if (finalUrl && !finalUrl.includes('facebook.com') && finalUrl.startsWith('http')) {
+      console.log('[redirect] VSL via HTTP redirect:', finalUrl.slice(0, 80));
       return finalUrl;
     }
-    // Token opaco: parseia HTML da pagina de aviso para extrair URL destino
+    // Parseia o HTML da página de aviso do Facebook para extrair a URL destino
     const html = await res.text();
-    if (html) {
-      const re = /href="(https?:\/\/[^"]{15,600})"/gi;
-      let m;
-      while ((m = re.exec(html)) !== null) {
-        const u = m[1].replace(/&amp;/g, '&');
-        if (!u.includes('facebook') && u.startsWith('http')) {
-          return u;
+    const isFbPage = finalUrl.includes('facebook.com') || finalUrl.includes('l.php');
+    if (isFbPage && html) {
+      // A página de aviso contém a URL destino em href ou como texto
+      const patterns = [
+        // <a href="https://external..."> — link de confirmação da página de aviso
+        /href="(https?:\/\/(?!(?:www\.)?(?:l\.)?facebook\.com)[^"]{15,800})"/gi,
+        // data-url="https://..." em elementos de aviso
+        /data-url="(https?:\/\/(?!(?:www\.)?(?:l\.)?facebook\.com)[^"]{15,800})"/gi,
+        // JavaScript: location = "url" ou window.location.href = "url"
+        /(?:location|location\.href)\s*=\s*["'](https?:\/\/(?!(?:www\.)?(?:l\.)?facebook\.com)[^"']{15,800})["']/gi,
+      ];
+      for (const pattern of patterns) {
+        let m;
+        while ((m = pattern.exec(html)) !== null) {
+          const candidate = m[1].replace(/&amp;/g, '&');
+          if (!candidate.includes('facebook.com') && candidate.startsWith('http')) {
+            console.log('[redirect] VSL extraída do HTML:', candidate.slice(0, 80));
+            return candidate;
+          }
         }
       }
     }
     return null;
   } catch (e) {
-    console.warn('[redirect] Erro ao resolver:', e.message);
+    console.warn(`[redirect] Erro ao resolver:`, e.message);
     return null;
   }
 }
@@ -261,8 +286,8 @@ function hasExternalCta(ad) {
   if (ctaRaw && BLOCKED_CTA.some(b => ctaRaw === b || ctaRaw.startsWith(b + ' '))) return false;
   if (ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com')) return true;
   if (ad.linkDesc || ad.linkTitle) return true;
-  if (ad.ctaText && ad.ctaText.trim().length > 0) return true; 
-     if (ad.ctaUrl) return true;
+  if (ad.ctaText && ad.ctaText.trim().length > 0) return true;
+  if (ad.ctaUrl) return true;
   return false;
 }
 
@@ -283,7 +308,12 @@ app.post('/api/queue', auth, async (req, res) => {
   const insertMany = db.transaction((items) => {
     for (const ad of items) insert.run(ad.id, JSON.stringify(ad));
   });
-  insertMany(prepared);
+  try {
+    insertMany(prepared);
+  } catch (dbErr) {
+    console.error('[queue] Erro ao inserir no banco:', dbErr.message);
+    return res.status(500).json({ ok: false, error: dbErr.message });
+  }
   res.json({ ok: true, count: prepared.length });
 
   for (const ad of prepared) {
@@ -316,7 +346,7 @@ app.post('/api/queue', auth, async (req, res) => {
         if (vslUrl) {
           ad.vslUrl = vslUrl;
           db.prepare('UPDATE queue SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
-          console.log('[redirect] VSL resolvida:', vslUrl.slice(0, 80));
+          console.log(`[redirect] VSL resolvida: ${vslUrl.slice(0, 80)}`);
         }
       });
     }
@@ -360,7 +390,7 @@ app.post('/api/saved', auth, async (req, res) => {
   }
   if (ad.ctaUrl && !ad.vslUrl) {
     const vslUrl = await resolveRedirect(ad.ctaUrl);
-    if (vslUrl) { ad.vslUrl = vslUrl; changed = true; console.log('[redirect] VSL resolvida:', vslUrl.slice(0, 80)); }
+    if (vslUrl) { ad.vslUrl = vslUrl; changed = true; console.log(`[redirect] VSL resolvida: ${vslUrl.slice(0, 80)}`); }
   }
   if (changed) {
     db.prepare('UPDATE saved SET data = ? WHERE id = ?').run(JSON.stringify(ad), ad.id);
