@@ -499,9 +499,15 @@ function buildCard(ad) {
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
   const hasCta = ad.linkTitle || ad.linkDesc || ad.ctaUrl || ad.vslUrl || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
-    let domain = '';
     const bestUrl = ad.vslUrl || decodeFbRedirect(ad.ctaUrl) || ad.snapshotUrl || '';
-    try { domain = new URL(bestUrl || 'http://x').hostname.replace('www.','').replace(/^l\.facebook\.com$/, ''); } catch {}
+    // Domínio: usa campo nativo do Facebook, ou extrai da URL real (nunca exibe facebook.com)
+    let domain = ad.linkDomain || '';
+    if (!domain) {
+      try {
+        const h = new URL(bestUrl || 'http://x').hostname.replace('www.', '');
+        if (!h.includes('facebook.com') && h !== 'x') domain = h;
+      } catch {}
+    }
     const ctaLabel = ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
