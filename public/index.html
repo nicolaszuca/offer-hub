@@ -118,8 +118,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .link-domain{font-size:10.5px;color:#65676b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .link-title{font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .link-desc{font-size:12px;color:#65676b;overflow:hidden;white-space:nowraw;text-overflow:ellipsis;margin-top:2px}
-.cta-btn{flex-shrink:0;padding:8px 16px;background:#e4e6eb;color:#1c1e21;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowraw;transition:all .15s}
-.cta-btn:hover{background:#d8dadf}
+.cta-btn{flex-shrink:0;padding:8px 16px;background:#1877f2;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowraw;transition:all .15s}
+.cta-btn:hover{background:#166fe5}
 
 /* Analysis */
 .card-analysis{margin:0 12px 12px;background:#f0f4ff;border-radius:8px;padding:12px;font-size:12.5px;line-height:1.75;color:#374151;border-left:3px solid var(--primary);white-space:pre-wrap}
@@ -168,8 +168,8 @@ body.dark .card-link{background:#3a3b3c;border-top-color:#4a4b4c}
 body.dark .link-domain{color:#b0b3b8}
 body.dark .link-title{color:#e4e6eb}
 body.dark .link-desc{color:#9ca3af}
-body.dark .cta-btn{background:#4a4b4c;color:#e4e6eb}
-body.dark .cta-btn:hover{background:#5a5b5c}
+body.dark .cta-btn{background:#1877f2;color:#fff}
+body.dark .cta-btn:hover{background:#166fe5}
 body.dark .adlib-btn{background:#1d3557;color:#7eb8f7}
 body.dark .adlib-btn:hover{background:#254773}
 body.dark .hdr-icon:hover{background:#3a3b3c}
@@ -494,20 +494,21 @@ function buildCard(ad) {
     media = `<div class="card-media"><img src="${e(thumbSrc)}" loading="lazy" onerror="this.parentElement.style.display='none'" alt=""></div>`;
   }
 
-  // Link card — mostra quando há linkDesc, URL externa OU ctaText com snapshotUrl
+  // Link card — mostra quando há linkTitle, linkDesc, URL externa OU ctaText
   let link = '';
   const isExternalUrl = ad.snapshotUrl && !ad.snapshotUrl.includes('facebook.com');
-  const hasCta = ad.linkDesc || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
+  const hasCta = ad.linkTitle || ad.linkDesc || isExternalUrl || (ad.ctaText && ad.snapshotUrl);
   if (hasCta) {
     let domain = '';
     try { domain = new URL(ad.snapshotUrl||'http://x').hostname.replace('www.',''); } catch {}
-    const ctaLabel = ad.ctaText || ad.linkTitle || 'Saiba mais';
+    const ctaLabel = ad.ctaText || 'Saiba mais';
     link = `<div class="card-link">
       <div class="link-left">
         ${domain?`<div class="link-domain">${e(domain)}</div>`:''}
+        ${ad.linkTitle?`<div class="link-title">${e(ad.linkTitle)}</div>`:''}
         ${ad.linkDesc?`<div class="link-desc">${e(ad.linkDesc)}</div>`:''}
       </div>
-      ${ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''}
+      ${ctaLabel&&ad.snapshotUrl?`<a href="${e(ad.snapshotUrl)}" target="_blank" class="cta-btn">${e(ctaLabel)}</a>`:''}
     </div>`;
   }
 
