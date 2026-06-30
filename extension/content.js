@@ -135,9 +135,13 @@ function extractAd(node) {
 
     // ── Video ─────────────────────────────────────────────────────────────────
     const videoUrl =
-      deepGet(node, "playable_url_quality_hd", 20) || deepGet(node, "playable_url", 20) ||
-      deepGet(node, "browser_native_hd_url", 20) || deepGet(node, "browser_native_sd_url", 20) ||
-      deepGet(node, "stream_url", 20) || "";
+      deepGet(node, "playable_url_quality_hd", 25) || deepGet(node, "playable_url", 25) ||
+      deepGet(node, "browser_native_hd_url", 25) || deepGet(node, "browser_native_sd_url", 25) ||
+      deepGet(node, "stream_url", 25) ||
+      deepGetAll(node, "playable_url", 20).find(u => typeof u === "string" && u.startsWith("http")) ||
+      deepGetAll(node, "playable_url_quality_hd", 20).find(u => typeof u === "string" && u.startsWith("http")) ||
+      deepGetAll(node, "browser_native_hd_url", 20).find(u => typeof u === "string" && u.startsWith("http")) ||
+      "";
     const thumbnailUri =
       deepGet(contentStory, "thumbnailImage")?.uri ||
       deepGet(contentStory, "preferred_thumbnail")?.image?.uri ||
@@ -212,7 +216,8 @@ function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds 
     const ads = sponsoredNodes.map(node => {
       const ad = extractAd(node);
       if (!ad) return null;
-      if (!ad.videoUrl && availableVideos.length > 0) {
+      // Só usa raw fallback 1:1 (evita vídeo de post orgânico)
+        if (!ad.videoUrl && availableVideos.length > 0 && availableVideos.length <= sponsoredNodes.length) {
         ad.videoUrl = availableVideos.shift();
         console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
       }
