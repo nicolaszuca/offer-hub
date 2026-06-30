@@ -5,7 +5,7 @@
   const OFFER_HUB_ID = "__offer_hub_xhr_listener";
   const resRegexs = ["/api/graphql"].map(e => new RegExp(e, "i"));
 
-  console.log("[OfferHub] \u{1F680} scripti.js carregado");
+  console.log("[OfferHub] scripti.js carregado");
 
   function extractRawVideoUrls(text) {
     const urls = new Set();
@@ -42,22 +42,30 @@
 
   function extractRawCtaUrl(text) {
     let m;
+    // Pattern 1: named CTA link fields
     const re1 = /"(?:cta_link|link_url|destination_url|landing_url|call_to_action_link)"s*:s*"([^"]{10,800})"/g;
     while ((m = re1.exec(text)) !== null) {
       const url = m[1].replace(/\\//g, '/').replace(/\\u0026/g, '&').replace(/\\u003F/gi, '?');
       if (url.startsWith('http')) return url;
     }
-    const re2 = /"call_to_action"s*:s*\{[^}]{0,300}"value"s*:s*\{[^}]{0,300}"link"s*:s*"([^"]{10,800})"/g;
+    // Pattern 2: call_to_action.value.link
+    const re2 = /"call_to_action"s*:s*\{[^\}]{0,300}"value"s*:s*\{[^\}]{0,300}"link"s*:s*"([^"]{10,800})"/g;
     while ((m = re2.exec(text)) !== null) {
       const url = m[1].replace(/\\//g, '/').replace(/\\u0026/g, '&').replace(/\\u003F/gi, '?');
       if (url.startsWith('http')) return url;
+    }
+    // Pattern 3: l.facebook.com/l.php redirect URL (CTA tracking link stored anywhere in GraphQL)
+    const re3 = /"(https?:[^"]{0,10}l\.facebook\.com[^"]{0,10}l\.php\?[^"]{20,2000})"/g;
+    while ((m = re3.exec(text)) !== null) {
+      const url = m[1].replace(/\\//g, '/').replace(/\\u0026/g, '&').replace(/\\u003F/gi, '?');
+      if (url.startsWith('http') && url.includes('l.php')) return url;
     }
     return null;
   }
 
   function extractRawImageUrls(text) {
     const urls = new Set();
-    const imgRe = /"(?:resizable_image|photo_image|preview_image|thumbnail_image|image)"s*:s*\{[^}]{0,300}?"uri"s*:s*"([^"]+)"/g;
+    const imgRe = /"(?:resizable_image|photo_image|preview_image|thumbnail_image|image)"s*:s*\{[^\}]{0,300}?"uri"s*:s*"([^"]+)"/g;
     let m;
     while ((m = imgRe.exec(text)) !== null) {
       const url = m[1].replace(/\\//g, '/').replace(/\\u0026/g, '&').replace(/\\u003F/gi, '?');
@@ -79,7 +87,7 @@
       const imageUrls = extractRawImageUrls(text);
       const { adLibIds, pageIds } = extractSponsoredIds(text);
       const rawCtaUrl = extractRawCtaUrl(text);
-      console.log("[OfferHub] Anuncio detectado | videos:", videoUrls.length, "| imagens:", imageUrls.length, "| adLibIds:", adLibIds.length, "| pageIds:", pageIds.length, "| ctaUrl:", rawCtaUrl ? rawCtaUrl.slice(0, 60) : 'none');
+      console.log("[OfferHub] Ad detected | videos:", videoUrls.length, "| images:", imageUrls.length, "| adLibIds:", adLibIds.length, "| ctaUrl:", rawCtaUrl ? rawCtaUrl.slice(0, 60) : 'none');
       window.postMessage({ type: OFFER_HUB_ID, payload: text, videoUrls, imageUrls, adLibIds, pageIds, rawCtaUrl }, window.location.origin);
     }
   }
@@ -88,7 +96,6 @@
     if (!resRegexs.some(r => r.test(xhr.responseURL))) return;
     const text = xhr.responseText;
     const ct = xhr.getResponseHeader("content-type") || "";
-    console.log("[OfferHub] GraphQL XHR | ct:", ct.substring(0, 40), "| sponsor:", text.includes("SponsoredData"));
     if (text && ct.includes("text/html")) postPayload(text);
   }
 
