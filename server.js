@@ -372,7 +372,12 @@ app.get('/api/saved', auth, (req, res) => {
 app.post('/api/saved', auth, async (req, res) => {
   const ad = req.body;
   if (!ad.id) ad.id = crypto.randomUUID();
-  db.prepare('INSERT OR REPLACE INTO saved (id, data) VALUES (?, ?)').run(ad.id, JSON.stringify(ad));
+  try {
+    db.prepare('INSERT OR REPLACE INTO saved (id, data) VALUES (?, ?)').run(ad.id, JSON.stringify(ad));
+  } catch (dbErr) {
+    console.error('[saved] Erro ao inserir no banco:', dbErr.message);
+    return res.status(500).json({ ok: false, error: dbErr.message });
+  }
   res.json({ ok: true, id: ad.id });
 
   let changed = false;
