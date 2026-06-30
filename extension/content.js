@@ -217,7 +217,7 @@ function handlePayload(payload, rawVideoUrls = [], rawAdLibIds = [], rawPageIds 
       const ad = extractAd(node);
       if (!ad) return null;
       // Só usa raw fallback 1:1 (evita vídeo de post orgânico)
-        if (!ad.videoUrl && availableVideos.length > 0 && availableVideos.length <= sponsoredNodes.length) {
+        if (!ad.videoUrl && availableVideos.length > 0) {
         ad.videoUrl = availableVideos.shift();
         console.log("[OfferHub] 🎬 Vídeo via raw URL:", ad.advertiser, ad.videoUrl?.slice(0, 60));
       }
