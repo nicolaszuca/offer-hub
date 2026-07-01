@@ -354,13 +354,23 @@ app.post('/api/queue', auth, async (req, res) => {
 });
 
 app.delete('/api/queue/:id', auth, (req, res) => {
-  db.prepare('DELETE FROM queue WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM queue WHERE id = ?').run(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[delete queue] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.delete('/api/queue', auth, (req, res) => {
-  db.prepare('DELETE FROM queue').run();
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM queue').run();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[delete queue all] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ─── SAVED ────────────────────────────────────────────────────────────────────
@@ -409,13 +419,23 @@ app.patch('/api/saved/:id', auth, (req, res) => {
 });
 
 app.delete('/api/saved/:id', auth, (req, res) => {
-  db.prepare('DELETE FROM saved WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM saved WHERE id = ?').run(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[delete saved] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.delete('/api/saved', auth, (req, res) => {
-  db.prepare('DELETE FROM saved').run();
-  res.json({ ok: true });
+  try {
+    db.prepare('DELETE FROM saved').run();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[delete saved all] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ─── ANALYZE ──────────────────────────────────────────────────────────────────
@@ -497,7 +517,42 @@ app.post('/api/cleanup', auth, (req, res) => {
 });
 
 // ─── HEALTH ───────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.2.0' }));
+app.get('/api/health', (req, res) => {
+  try {
+    // Tamanho do banco
+    const dbPath = process.env.DB_PATH || path.join(__dirname, 'hub.db');
+    const dbSize = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
+
+    // Tamanho das pastas de mídia
+    function dirSize(dir) {
+      if (!fs.existsSync(dir)) return 0;
+      return fs.readdirSync(dir).reduce((acc, f) => {
+        try { return acc + fs.statSync(path.join(dir, f)).size; } catch { return acc; }
+      }, 0);
+    }
+    const imagesSize = dirSize(IMAGES_DIR);
+    const videosSize = dirSize(VIDEOS_DIR);
+    const totalBytes = dbSize + imagesSize + videosSize;
+    const toMB = b => (b / 1024 / 1024).toFixed(1);
+
+    // Contagens
+    const queueCount = db.prepare('SELECT COUNT(*) as n FROM queue').get().n;
+    const savedCount = db.prepare('SELECT COUNT(*) as n FROM saved').get().n;
+
+    res.json({
+      ok: true, version: '1.2.0',
+      disk: {
+        dbMB: toMB(dbSize),
+        imagesMB: toMB(imagesSize),
+        videosMB: toMB(videosSize),
+        totalMB: toMB(totalBytes),
+      },
+      counts: { queue: queueCount, saved: savedCount },
+    });
+  } catch (e) {
+    res.json({ ok: true, version: '1.2.0', error: e.message });
+  }
+});
 
 // ─── START ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
