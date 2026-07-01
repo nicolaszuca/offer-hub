@@ -147,6 +147,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .m-msg{font-size:12px;margin-top:6px;min-height:18px}
 .analysis-text{font-size:13px;line-height:1.75;color:#374151;white-space:pre-wrap}
 
+/* ─── RESPONSIVO ──────────────────────────────────────────────── */
+/* 3 colunas — telas médias (~1300px) */
+@media (max-width: 1300px) {
+  .grid { grid-template-columns: repeat(3,1fr); }
+}
+/* 2 colunas — notebooks pequenos (~1024px) */
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: repeat(2,1fr); }
+  .sidebar { width: 180px; min-width: 180px; }
+  .grid-wrap { padding: 16px 18px; }
+  .topbar { padding: 8px 14px; gap: 8px; }
+  .search-wrap { max-width: 280px; }
+  .page-info { display: none; }
+}
+/* 1 coluna — telas muito pequenas ou mobile (<700px) */
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+  .sidebar { width: 48px; min-width: 48px; padding: 12px 4px; }
+  .sidebar-logo, .s-section, .nav-item span, .s-action span, .sync-info { display: none; }
+  .nav-item { justify-content: center; padding: 9px; }
+  .nav-badge { display: none; }
+  .s-action { justify-content: center; padding: 8px; }
+  .topbar { flex-wrap: wrap; gap: 6px; }
+  .search-wrap { max-width: 100%; flex: 1 1 100%; order: -1; }
+  .topbar-right { width: 100%; justify-content: flex-end; }
+  .grid-wrap { padding: 12px; }
+}
+
 /* TOAST */
 #toast{position:fixed;bottom:24px;right:24px;background:#1c1e21;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none}
 #toast.show{opacity:1;transform:translateY(0)}
