@@ -258,9 +258,6 @@ body.dark .empty-title{color:#e4e6eb}
           placeholder="Buscar anunciante ou copy..." oninput="onSearch(this.value)">
       </div>
       <div class="topbar-right">
-        <select class="filter-sel" id="filter-advertiser" onchange="onFilterAdvertiser(this.value)">
-          <option value="">Todos anunciantes</option>
-        </select>
         <div class="per-page-wrap">
           Exibir:
           <select class="per-page-sel" id="per-page" onchange="changePerPage(this.value)">
@@ -346,7 +343,7 @@ body.dark .empty-title{color:#e4e6eb}
 const S = {
   token: localStorage.getItem('hub_token') || '',
   queue: [], saved: [],
-  tab: 'queue', page: 1, perPage: 16, search: '', filterAdvertiser: '',
+  tab: 'queue', page: 1, perPage: 16, search: '',
   analyzing: new Set(),
 };
 
@@ -395,7 +392,7 @@ async function loadData() {
   try {
     const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
     S.queue = q; S.saved = sv;
-    updateBadges(); updateAdvertiserFilter(); renderGrid(); setSyncStatus('ok');
+    updateBadges(); renderGrid(); setSyncStatus('ok');
   } catch { setSyncStatus('error'); }
 }
 
@@ -421,17 +418,7 @@ function switchTab(tab) {
 }
 
 function onSearch(v) { S.search = v.toLowerCase(); S.page = 1; renderGrid(); }
-function onFilterAdvertiser(v) { S.filterAdvertiser = v; S.page = 1; renderGrid(); }
 function changePerPage(v) { S.perPage = parseInt(v); S.page = 1; renderGrid(); }
-
-function updateAdvertiserFilter() {
-  const list = [...S.queue, ...S.saved];
-  const advertisers = [...new Set(list.map(a => a.advertiser).filter(Boolean))].sort();
-  const sel = document.getElementById('filter-advertiser');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Todos anunciantes</option>' +
-    advertisers.map(a => `<option value="${a}"${a===current?' selected':''}>${a}</option>`).join('');
-}
 function prevPage() { if (S.page > 1) { S.page--; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; } }
 function nextPage() {
   if (S.page < Math.ceil(getFiltered().length / S.perPage)) { S.page++; renderGrid(); document.querySelector('.grid-wrap').scrollTop = 0; }
@@ -439,7 +426,6 @@ function nextPage() {
 
 function getFiltered() {
   let list = S.tab === 'queue' ? S.queue : S.saved;
-  if (S.filterAdvertiser) list = list.filter(a => a.advertiser === S.filterAdvertiser);
   if (!S.search) return list;
   return list.filter(a =>
     (a.advertiser||'').toLowerCase().includes(S.search) ||
