@@ -395,8 +395,8 @@ body.dark .empty-title{color:#e4e6eb}
               <button class="d-ctab active" id="ctab-7" onclick="setChartDays(7)">7 dias</button>
               <button class="d-ctab" id="ctab-30" onclick="setChartDays(30)">30 dias</button>
             </div>
-            <div class="d-chart-body">
-              <canvas id="domain-chart" height="140"></canvas>
+            <div class="d-chart-body" style="position:relative;height:180px">
+              <canvas id="domain-chart"></canvas>
             </div>
           </div>
           <!-- Ads do domínio -->
@@ -1035,6 +1035,7 @@ function renderDomainDetail(d) {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: {
         label: ctx => ` ${ctx.parsed.y} ad${ctx.parsed.y !== 1 ? 's' : ''}`
       }}},
