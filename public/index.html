@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offer Hub</title>
+<title>DHub</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -18,9 +18,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:var(--sidebar);display:flex;align-items:center;justify-content:center;z-index:100}
 .login-box{background:#1e2028;border-radius:16px;padding:40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.login-logo{font-size:28px;font-weight:800;color:#fff;margin-bottom:6px}
-.login-logo span{color:var(--primary)}
-.login-sub{color:#9ca3af;font-size:13px;margin-bottom:28px}
+.login-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:6px}
+.login-logo-img{width:88px;height:88px;margin-bottom:8px;filter:drop-shadow(0 4px 18px rgba(88,101,242,.35))}
+.login-logo-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-1px}
+.login-logo-name span{color:var(--primary)}
+.login-sub{color:#9ca3af;font-size:13px;margin-bottom:28px;text-align:center}
 .login-label{display:block;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .login-input{width:100%;padding:10px 14px;background:#12141a;border:1.5px solid #2d3148;border-radius:8px;color:#fff;font-size:14px;outline:none;transition:border-color .2s}
 .login-input:focus{border-color:var(--primary)}
@@ -34,8 +36,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* SIDEBAR */
 .sidebar{width:210px;min-width:210px;background:var(--sidebar);display:flex;flex-direction:column;padding:16px 10px;overflow-y:auto}
-.sidebar-logo{font-size:18px;font-weight:800;color:#fff;padding:6px 10px 20px;letter-spacing:-.3px}
-.sidebar-logo span{color:var(--primary)}
+.sidebar-logo{display:flex;align-items:center;gap:9px;padding:6px 10px 20px}
+.sidebar-logo-img{width:32px;height:32px;flex-shrink:0}
+.sidebar-logo-name{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.5px}
+.sidebar-logo-name span{color:var(--primary)}
 .s-section{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#4b5563;padding:4px 10px;margin-top:8px}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:#9ca3af;font-size:13px;font-weight:500;margin-bottom:2px;transition:all .15s}
 .nav-item:hover{background:var(--sidebar-hover);color:#fff}
@@ -165,7 +169,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media (max-width: 700px) {
   .grid { grid-template-columns: 1fr; }
   .sidebar { width: 48px; min-width: 48px; padding: 12px 4px; }
-  .sidebar-logo, .s-section, .nav-item span, .s-action span, .sync-info { display: none; }
+  .sidebar-logo-name, .s-section, .nav-item span, .s-action span, .sync-info { display: none; }
+  .sidebar-logo { padding: 4px 4px 16px; justify-content: center; }
   .nav-item { justify-content: center; padding: 9px; }
   .nav-badge { display: none; }
   .s-action { justify-content: center; padding: 8px; }
@@ -284,7 +289,45 @@ body.dark .empty-title{color:#e4e6eb}
 <!-- LOGIN -->
 <div id="login-screen" style="display:none">
   <div class="login-box">
-    <div class="login-logo">Offer<span>Hub</span></div>
+    <div class="login-logo">
+      <svg class="login-logo-img" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#e8e8e8"/>
+            <stop offset="100%" stop-color="#6b6b6b"/>
+          </radialGradient>
+          <linearGradient id="dgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="30%" stop-color="#d8d8d8"/>
+            <stop offset="70%" stop-color="#a0a0a0"/>
+            <stop offset="100%" stop-color="#c8c8c8"/>
+          </linearGradient>
+          <linearGradient id="dside" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#4a4a4a"/>
+            <stop offset="100%" stop-color="#2a2a2a"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+        <!-- fundo circular -->
+        <circle cx="100" cy="100" r="98" fill="url(#bg)" stroke="#999" stroke-width="1"/>
+        <!-- brilho central -->
+        <ellipse cx="100" cy="80" rx="55" ry="40" fill="white" opacity="0.18"/>
+        <!-- sombra do D -->
+        <text x="51" y="133" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="#2a2a2a" opacity="0.5">D</text>
+        <!-- D principal -->
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="url(#dgrad)">D</text>
+        <!-- borda escura do D -->
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="none" stroke="#333" stroke-width="1.5" opacity="0.6">D</text>
+        <!-- traços laterais e texto HUB -->
+        <line x1="34" y1="156" x2="64" y2="156" stroke="#aaa" stroke-width="1.5"/>
+        <text x="100" y="160" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ccc" text-anchor="middle" letter-spacing="5">HUB</text>
+        <line x1="136" y1="156" x2="166" y2="156" stroke="#aaa" stroke-width="1.5"/>
+      </svg>
+      <div class="login-logo-name">D<span>Hub</span></div>
+    </div>
     <div class="login-sub">Hub de mineração e análise de ofertas</div>
     <label class="login-label">Senha</label>
     <input class="login-input" type="password" id="login-pwd" placeholder="Digite a senha..."
@@ -299,7 +342,30 @@ body.dark .empty-title{color:#e4e6eb}
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-logo">Offer<span>Hub</span></div>
+    <div class="sidebar-logo">
+      <svg class="sidebar-logo-img" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sbg" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#e8e8e8"/>
+            <stop offset="100%" stop-color="#6b6b6b"/>
+          </radialGradient>
+          <linearGradient id="sdg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="35%" stop-color="#d0d0d0"/>
+            <stop offset="100%" stop-color="#999"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="98" fill="url(#sbg)"/>
+        <ellipse cx="100" cy="80" rx="55" ry="38" fill="white" opacity="0.15"/>
+        <text x="51" y="133" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="#222" opacity="0.45">D</text>
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="url(#sdg)">D</text>
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="none" stroke="#555" stroke-width="1.2" opacity="0.5">D</text>
+        <line x1="34" y1="156" x2="64" y2="156" stroke="#aaa" stroke-width="1.5"/>
+        <text x="100" y="160" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ccc" text-anchor="middle" letter-spacing="5">HUB</text>
+        <line x1="136" y1="156" x2="166" y2="156" stroke="#aaa" stroke-width="1.5"/>
+      </svg>
+      <span class="sidebar-logo-name">D<span>Hub</span></span>
+    </div>
 
     <div class="s-section">Visualizar</div>
     <div class="nav-item active" id="nav-queue" onclick="switchTab('queue')">
