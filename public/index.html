@@ -175,6 +175,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .grid-wrap { padding: 12px; }
 }
 
+/* ─── DOMÍNIOS VIEW ──────────────────────────────────────────── */
+.domains-view{flex:1;overflow-y:auto;padding:20px 24px;display:none;flex-direction:column;gap:16px}
+.domains-view.visible{display:flex}
+.d-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.d-stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.d-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);font-weight:700;margin-bottom:8px}
+.d-stat-num{font-size:26px;font-weight:800;color:var(--text);line-height:1.1;word-break:break-all}
+.d-stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.d-body{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.d-table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.d-table-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text);display:flex;justify-content:space-between}
+.d-table-head span{font-weight:400;color:var(--text2)}
+.d-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .12s}
+.d-row:last-child{border-bottom:none}
+.d-row:hover{background:#f7f8fa}
+.d-row.sel{background:#eef0ff}
+.d-rank{font-size:11px;font-weight:700;color:var(--text2);width:16px;flex-shrink:0}
+.d-favicon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;flex-shrink:0}
+.d-info{flex:1;min-width:0}
+.d-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d-spark{display:flex;align-items:flex-end;gap:2px;height:18px;margin-top:3px}
+.d-spark-bar{width:5px;border-radius:1px 1px 0 0;min-height:2px}
+.d-count{text-align:right;flex-shrink:0}
+.d-count-num{font-size:17px;font-weight:800;color:var(--primary);line-height:1}
+.d-count-lbl{font-size:10px;color:var(--text2)}
+.d-trend{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px}
+.d-trend.up{background:#dcfce7;color:#16a34a}
+.d-trend.down{background:#fee2e2;color:#dc2626}
+.d-trend.flat{background:#f0f2f5;color:var(--text2)}
+.d-right{display:flex;flex-direction:column;gap:14px}
+.d-chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.d-chart-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.d-chart-title{font-size:14px;font-weight:700;color:var(--text)}
+.d-chart-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.d-chart-stats{display:flex;gap:16px}
+.d-stat-box{text-align:right}
+.d-stat-box-num{font-size:20px;font-weight:800;color:var(--text);line-height:1}
+.d-stat-box-num.green{color:var(--green)}
+.d-stat-box-lbl{font-size:10px;color:var(--text2)}
+.d-chart-tabs{display:flex;gap:4px;padding:8px 16px 0}
+.d-ctab{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text2)}
+.d-ctab.active{background:var(--primary);color:#fff}
+.d-chart-body{padding:12px 16px 16px}
+.d-ads-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.d-ads-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
+/* dark */
+body.dark .d-stat-card{background:var(--card);border-color:var(--border)}
+body.dark .d-table-card,.dark .d-chart-card{background:var(--card);border-color:var(--border)}
+body.dark .d-row:hover{background:#2d2e30}
+body.dark .d-row.sel{background:#1e2040}
+body.dark .d-table-head{border-color:var(--border)}
+body.dark .d-row{border-color:#3a3b3c}
+body.dark .d-chart-head{border-color:var(--border)}
+
 /* TOAST */
 #toast{position:fixed;bottom:24px;right:24px;background:#1c1e21;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none}
 #toast.show{opacity:1;transform:translateY(0)}
@@ -256,6 +310,10 @@ body.dark .empty-title{color:#e4e6eb}
       <span class="nav-icon">⭐</span> Salvos
       <span class="nav-badge" id="badge-saved">0</span>
     </div>
+    <div class="nav-item" id="nav-domains" onclick="switchTab('domains')">
+      <span class="nav-icon">🌐</span> Domínios
+      <span class="nav-badge" id="badge-domains">0</span>
+    </div>
 
     <div class="s-divider"></div>
     <div class="s-section">Ações</div>
@@ -304,8 +362,50 @@ body.dark .empty-title{color:#e4e6eb}
     </div>
 
     <!-- GRID -->
-    <div class="grid-wrap">
+    <div class="grid-wrap" id="grid-wrap">
       <div class="grid" id="grid"></div>
+    </div>
+
+    <!-- DOMÍNIOS VIEW -->
+    <div class="domains-view" id="view-domains">
+      <!-- 3 cards de resumo -->
+      <div class="d-summary" id="domain-summary"></div>
+      <!-- corpo: tabela + gráfico + ads -->
+      <div class="d-body">
+        <div class="d-table-card" id="domain-table"></div>
+        <div class="d-right">
+          <div class="d-chart-card" id="domain-chart-card">
+            <div class="d-chart-head">
+              <div>
+                <div class="d-chart-title" id="d-chart-title">—</div>
+                <div class="d-chart-sub" id="d-chart-sub">Selecione um domínio</div>
+              </div>
+              <div class="d-chart-stats">
+                <div class="d-stat-box">
+                  <div class="d-stat-box-num" id="d-total-ads">—</div>
+                  <div class="d-stat-box-lbl">Total ads</div>
+                </div>
+                <div class="d-stat-box">
+                  <div class="d-stat-box-num green" id="d-today-ads">—</div>
+                  <div class="d-stat-box-lbl">Hoje/Ontem</div>
+                </div>
+              </div>
+            </div>
+            <div class="d-chart-tabs">
+              <button class="d-ctab active" id="ctab-7" onclick="setChartDays(7)">7 dias</button>
+              <button class="d-ctab" id="ctab-30" onclick="setChartDays(30)">30 dias</button>
+            </div>
+            <div class="d-chart-body">
+              <canvas id="domain-chart" height="140"></canvas>
+            </div>
+          </div>
+          <!-- Ads do domínio -->
+          <div id="domain-ads-section" style="display:none">
+            <div class="d-ads-label" id="d-ads-label">Ads do domínio</div>
+            <div class="d-ads-grid" id="domain-ads-grid"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -366,6 +466,7 @@ body.dark .empty-title{color:#e4e6eb}
 <!-- TOAST -->
 <div id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ── ESTADO ──────────────────────────────────────────────────────────────────
 const S = {
@@ -420,13 +521,18 @@ async function loadData() {
   try {
     const [q, sv] = await Promise.all([API('GET','/api/queue'), API('GET','/api/saved')]);
     S.queue = q; S.saved = sv;
-    updateBadges(); renderGrid(); setSyncStatus('ok');
+    updateBadges();
+    if (S.tab === 'domains') renderDomains();
+    else renderGrid();
+    setSyncStatus('ok');
   } catch { setSyncStatus('error'); }
 }
 
 function updateBadges() {
   document.getElementById('badge-queue').textContent = S.queue.length;
   document.getElementById('badge-saved').textContent = S.saved.length;
+  const domainCount = Object.keys(getDomainMap()).length;
+  document.getElementById('badge-domains').textContent = domainCount || '';
 }
 
 function setSyncStatus(st) {
@@ -442,7 +548,15 @@ function switchTab(tab) {
   S.tab = tab; S.page = 1;
   document.getElementById('nav-queue').className = 'nav-item' + (tab==='queue'?' active':'');
   document.getElementById('nav-saved').className = 'nav-item' + (tab==='saved'?' active':'');
-  renderGrid();
+  document.getElementById('nav-domains').className = 'nav-item' + (tab==='domains'?' active':'');
+  const isDomains = tab === 'domains';
+  document.getElementById('grid-wrap').style.display = isDomains ? 'none' : '';
+  document.getElementById('view-domains').classList.toggle('visible', isDomains);
+  // Esconde search/paginação na view domains
+  document.querySelector('.search-wrap').style.visibility = isDomains ? 'hidden' : '';
+  document.querySelector('.topbar-right').style.visibility = isDomains ? 'hidden' : '';
+  if (isDomains) renderDomains();
+  else renderGrid();
 }
 
 function onSearch(v) { S.search = v.toLowerCase(); S.page = 1; renderGrid(); }
@@ -491,8 +605,8 @@ function renderGrid() {
   grid.innerHTML = items.map(ad => buildCard(ad)).join('');
 }
 
-function buildCard(ad) {
-  const isQ = S.tab === 'queue';
+function buildCard(ad, fromQueue) {
+  const isQ = fromQueue !== undefined ? fromQueue : S.tab === 'queue';
   const id = ad.id || '';
   const copy = ad.copy || '';
   const isLong = copy.length > 180;
@@ -749,9 +863,222 @@ function updateDarkBtn() {
 }
 if (localStorage.getItem('hub_dark')) document.body.classList.add('dark');
 
+// ── DOMÍNIOS ─────────────────────────────────────────────────────────────────
+let domainChart = null;
+let selectedDomain = null;
+let chartDays = 7;
+
+function getAdDay(ad) {
+  if (ad.createdAt && /^\d{4}-\d{2}-\d{2}/.test(ad.createdAt)) return ad.createdAt.substring(0, 10);
+  if (ad.addedAt) {
+    const parts = ad.addedAt.split('/');
+    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  return new Date().toISOString().split('T')[0];
+}
+
+function getLastNDays(n) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  return days;
+}
+
+function getDomainMap() {
+  const map = {};
+  [...S.queue, ...S.saved].forEach(ad => {
+    let domain = ad.linkDomain || '';
+    if (!domain) {
+      try {
+        const bestUrl = ad.vslUrl || decodeFbRedirect(ad.ctaUrl) || (ad.ctaUrl?.startsWith('http') ? ad.ctaUrl : '');
+        if (bestUrl) {
+          const h = new URL(bestUrl).hostname.replace('www.', '');
+          if (!h.includes('facebook.com') && h.length > 3) domain = h;
+        }
+      } catch {}
+    }
+    if (!domain) return;
+    if (!map[domain]) map[domain] = { domain, ads: [], byDay: {} };
+    // Evita duplicatas (mesmo ad em queue e saved)
+    if (!map[domain].ads.find(a => a.id === ad.id)) map[domain].ads.push(ad);
+    const day = getAdDay(ad);
+    map[domain].byDay[day] = (map[domain].byDay[day] || 0) + 1;
+  });
+  return map;
+}
+
+function getDomainColor(domain) {
+  let hash = 0;
+  for (let i = 0; i < domain.length; i++) hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+  const palette = ['#5865f2','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#10b981','#3b82f6'];
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function renderDomains() {
+  const map = getDomainMap();
+  const data = Object.values(map).sort((a, b) => b.ads.length - a.ads.length);
+  if (!data.length) {
+    document.getElementById('domain-summary').innerHTML = `<div class="d-stat-card" style="grid-column:1/-1;text-align:center;padding:40px">
+      <div style="font-size:36px;opacity:.3;margin-bottom:12px">🌐</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text)">Nenhum domínio capturado ainda</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px">Navegue pelo Facebook com a extensão ativa para capturar ads.</div>
+    </div>`;
+    document.getElementById('domain-table').innerHTML = '';
+    return;
+  }
+  if (!selectedDomain || !map[selectedDomain]) selectedDomain = data[0].domain;
+  renderDomainSummary(data);
+  renderDomainTable(data, map);
+  renderDomainDetail(map[selectedDomain]);
+}
+
+function renderDomainSummary(data) {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  let maxRecent = 0, topGrowth = data[0];
+  data.forEach(d => {
+    const recent = (d.byDay[today] || 0) + (d.byDay[yesterday] || 0);
+    if (recent > maxRecent) { maxRecent = recent; topGrowth = d; }
+  });
+  document.getElementById('domain-summary').innerHTML = `
+    <div class="d-stat-card">
+      <div class="d-stat-label">Domínios únicos</div>
+      <div class="d-stat-num">${data.length}</div>
+      <div class="d-stat-sub">em fila + salvos</div>
+    </div>
+    <div class="d-stat-card" style="cursor:pointer" onclick="selectDomain('${e(data[0].domain)}')">
+      <div class="d-stat-label">Maior volume</div>
+      <div class="d-stat-num" style="font-size:16px;color:var(--primary)">${e(data[0].domain)}</div>
+      <div class="d-stat-sub">${data[0].ads.length} ads capturados</div>
+    </div>
+    <div class="d-stat-card" style="cursor:pointer" onclick="selectDomain('${e(topGrowth.domain)}')">
+      <div class="d-stat-label">Escalando mais</div>
+      <div class="d-stat-num" style="font-size:16px;color:var(--green)">${e(topGrowth.domain)}</div>
+      <div class="d-stat-sub">+${maxRecent} ads hoje/ontem</div>
+    </div>
+  `;
+}
+
+function renderDomainTable(data, map) {
+  const days7 = getLastNDays(7);
+  const today = days7[6];
+  const yesterday = days7[5];
+  const rows = data.map((d, i) => {
+    const color = getDomainColor(d.domain);
+    const letter = d.domain[0].toUpperCase();
+    const maxDay = Math.max(...days7.map(day => d.byDay[day] || 0), 1);
+    const sparkBars = days7.map(day => {
+      const cnt = d.byDay[day] || 0;
+      const h = Math.max(2, Math.round((cnt / maxDay) * 16));
+      return `<div class="d-spark-bar" style="height:${h}px;background:${color};opacity:${day===today?1:0.45}"></div>`;
+    }).join('');
+    const recent2 = (d.byDay[today]||0) + (d.byDay[yesterday]||0);
+    const older5 = days7.slice(0,5).reduce((s,day)=>s+(d.byDay[day]||0),0);
+    const trend = recent2 > older5 * 0.7 ? 'up' : recent2 === 0 && older5 > 0 ? 'down' : 'flat';
+    const trendLabel = trend==='up' ? '↑ Subindo' : trend==='down' ? '↓ Caindo' : '→ Estável';
+    const isSel = d.domain === selectedDomain;
+    return `<div class="d-row${isSel?' sel':''}" onclick="selectDomain('${e(d.domain)}')">
+      <div class="d-rank">${i+1}</div>
+      <div class="d-favicon" style="background:${color}">${letter}</div>
+      <div class="d-info">
+        <div class="d-name" title="${e(d.domain)}">${e(d.domain)}</div>
+        <div class="d-spark">${sparkBars}</div>
+      </div>
+      <div class="d-count">
+        <div class="d-count-num">${d.ads.length}</div>
+        <div class="d-count-lbl">ads</div>
+        <div class="d-trend ${trend}">${trendLabel}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('domain-table').innerHTML = `
+    <div class="d-table-head">Ranking de domínios <span>${data.length} total</span></div>
+    ${rows}
+  `;
+}
+
+function renderDomainDetail(d) {
+  if (!d) return;
+  const days = getLastNDays(chartDays);
+  const counts = days.map(day => d.byDay[day] || 0);
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const recentCount = (d.byDay[today]||0) + (d.byDay[yesterday]||0);
+  const color = getDomainColor(d.domain);
+
+  document.getElementById('d-chart-title').textContent = d.domain;
+  document.getElementById('d-chart-sub').textContent = `Ads capturados nos últimos ${chartDays} dias`;
+  document.getElementById('d-total-ads').textContent = d.ads.length;
+  document.getElementById('d-today-ads').textContent = '+' + recentCount;
+
+  const labels = days.map(day => {
+    const dt = new Date(day + 'T12:00:00');
+    return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  });
+
+  if (domainChart) { domainChart.destroy(); domainChart = null; }
+  const ctx = document.getElementById('domain-chart').getContext('2d');
+  domainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Ads',
+        data: counts,
+        backgroundColor: color + '66',
+        borderColor: color,
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ` ${ctx.parsed.y} ad${ctx.parsed.y !== 1 ? 's' : ''}`
+      }}},
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#9ca3af', font:{size:11} }, grid: { color: '#f0f2f5' } },
+        x: { ticks: { color: '#9ca3af', font:{size:10}, maxRotation: 45 }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Ads vinculados ao domínio
+  const section = document.getElementById('domain-ads-section');
+  const grid = document.getElementById('domain-ads-grid');
+  if (!d.ads.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  document.getElementById('d-ads-label').textContent = `${d.ads.length} ad${d.ads.length>1?'s':''} vinculado${d.ads.length>1?'s':''} — ${d.domain}`;
+  const queueIds = new Set(S.queue.map(a => a.id));
+  grid.innerHTML = d.ads.map(ad => buildCard(ad, queueIds.has(ad.id))).join('');
+}
+
+function selectDomain(domain) {
+  selectedDomain = domain;
+  const map = getDomainMap();
+  const data = Object.values(map).sort((a,b) => b.ads.length - a.ads.length);
+  renderDomainTable(data, map);
+  renderDomainDetail(map[domain]);
+  // Scroll para o gráfico
+  document.getElementById('domain-chart-card').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function setChartDays(n) {
+  chartDays = n;
+  document.getElementById('ctab-7').classList.toggle('active', n === 7);
+  document.getElementById('ctab-30').classList.toggle('active', n === 30);
+  if (selectedDomain) {
+    const map = getDomainMap();
+    if (map[selectedDomain]) renderDomainDetail(map[selectedDomain]);
+  }
+}
+
 // ── INIT ─────────────────────────────────────────────────
 checkAuth();
 updateDarkBtn();
 </script>
+
 </body>
 </html>
