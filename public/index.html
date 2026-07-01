@@ -38,7 +38,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* SIDEBAR */
 .sidebar{width:210px;min-width:210px;background:var(--sidebar);display:flex;flex-direction:column;padding:16px 10px;overflow-y:auto}
 .sidebar-logo{display:flex;align-items:center;justify-content:center;padding:14px 10px 20px}
-.sidebar-logo-img{width:40px;height:40px;flex-shrink:0}
+.sidebar-logo-img{width:52px;height:52px;flex-shrink:0}
 .s-section{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#4b5563;padding:4px 10px;margin-top:8px}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:#9ca3af;font-size:13px;font-weight:500;margin-bottom:2px;transition:all .15s}
 .nav-item:hover{background:var(--sidebar-hover);color:#fff}
@@ -344,24 +344,22 @@ body.dark .empty-title{color:#e4e6eb}
     <div class="sidebar-logo">
       <svg class="sidebar-logo-img" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="sbg" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stop-color="#e8e8e8"/>
-            <stop offset="100%" stop-color="#6b6b6b"/>
-          </radialGradient>
           <linearGradient id="sdg" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#ffffff"/>
             <stop offset="35%" stop-color="#d0d0d0"/>
-            <stop offset="100%" stop-color="#999"/>
+            <stop offset="100%" stop-color="#888"/>
           </linearGradient>
         </defs>
-        <circle cx="100" cy="100" r="98" fill="url(#sbg)"/>
-        <ellipse cx="100" cy="80" rx="55" ry="38" fill="white" opacity="0.15"/>
-        <text x="51" y="133" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="#222" opacity="0.45">D</text>
-        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="url(#sdg)">D</text>
-        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="108" fill="none" stroke="#555" stroke-width="1.2" opacity="0.5">D</text>
-        <line x1="34" y1="156" x2="64" y2="156" stroke="#aaa" stroke-width="1.5"/>
-        <text x="100" y="160" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ccc" text-anchor="middle" letter-spacing="5">HUB</text>
-        <line x1="136" y1="156" x2="166" y2="156" stroke="#aaa" stroke-width="1.5"/>
+        <!-- sombra do D -->
+        <text x="52" y="134" font-family="Arial Black,sans-serif" font-weight="900" font-size="110" fill="#000" opacity="0.35">D</text>
+        <!-- D metálico -->
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="110" fill="url(#sdg)">D</text>
+        <!-- contorno sutil -->
+        <text x="48" y="130" font-family="Arial Black,sans-serif" font-weight="900" font-size="110" fill="none" stroke="#aaa" stroke-width="1" opacity="0.4">D</text>
+        <!-- — HUB — -->
+        <line x1="28" y1="157" x2="60" y2="157" stroke="#888" stroke-width="1.5"/>
+        <text x="100" y="161" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#aaa" text-anchor="middle" letter-spacing="5">HUB</text>
+        <line x1="140" y1="157" x2="172" y2="157" stroke="#888" stroke-width="1.5"/>
       </svg>
     </div>
 
