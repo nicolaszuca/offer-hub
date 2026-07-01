@@ -497,8 +497,10 @@ NOTA: [X/10] - [justificativa em 1 linha]`;
 });
 
 // ─── CLEANUP ──────────────────────────────────────────────────────────────────
-// Apaga imagens/videos do disco e limpa a fila (libera espaço quando disco cheio)
+// mode=media → apaga só arquivos de imagem/vídeo (libera disco, mantém fila)
+// mode=all   → apaga mídia + limpa a fila inteira (padrão antigo)
 app.post('/api/cleanup', auth, (req, res) => {
+  const mode = req.query.mode || 'all';
   let deleted = 0;
   for (const dir of [IMAGES_DIR, VIDEOS_DIR]) {
     try {
@@ -508,12 +510,15 @@ app.post('/api/cleanup', auth, (req, res) => {
       }
     } catch (_) {}
   }
-  try {
-    db.prepare('DELETE FROM queue').run();
-  } catch (e) {
-    return res.json({ ok: false, filesDeleted: deleted, error: e.message });
+  if (mode === 'all') {
+    try {
+      db.prepare('DELETE FROM queue').run();
+    } catch (e) {
+      return res.json({ ok: false, filesDeleted: deleted, error: e.message });
+    }
   }
-  res.json({ ok: true, filesDeleted: deleted });
+  console.log(`[cleanup] mode=${mode} | ${deleted} arquivos removidos`);
+  res.json({ ok: true, filesDeleted: deleted, mode });
 });
 
 // ─── HEALTH ───────────────────────────────────────────────────────────────────

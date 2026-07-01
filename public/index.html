@@ -330,9 +330,12 @@ body.dark .empty-title{color:#e4e6eb}
         <div class="sync-dot" id="sync-dot"></div>
         <span id="sync-txt">Aguardando...</span>
       </div>
-      <div class="sync-info" id="disk-info" style="display:none">
-        <span>💾</span>
-        <span id="disk-txt" style="font-size:10px"></span>
+      <div class="sync-info" id="disk-info" style="display:none;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>💾</span>
+          <span id="disk-txt" style="font-size:10px"></span>
+        </div>
+        <button onclick="cleanupMedia()" title="Liberar espaço (apaga imagens/vídeos em cache)" style="border:none;background:rgba(255,255,255,.08);color:#9ca3af;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;white-space:nowrap">Limpar</button>
       </div>
     </div>
   </aside>
@@ -519,6 +522,26 @@ function showApp() {
   checkDisk();
   setInterval(loadData, 30000);
   setInterval(checkDisk, 60000);
+}
+
+async function cleanupMedia() {
+  showConfirm(
+    '🧹 Liberar espaço em disco',
+    'Isso vai apagar todos os arquivos de imagem e vídeo em cache (as imagens nos cards vão recarregar do Facebook). A fila e os salvos NÃO serão apagados. Continuar?',
+    async () => {
+      try {
+        toast('⏳ Limpando...', 60000);
+        const r = await fetch('/api/cleanup?mode=media', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${S.token}` }
+        });
+        const data = await r.json();
+        await checkDisk();
+        toast(`✅ ${data.filesDeleted} arquivo(s) removido(s). Disco liberado!`);
+        await loadData();
+      } catch { toast('❌ Erro na limpeza'); }
+    }
+  );
 }
 
 async function checkDisk() {
