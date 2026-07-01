@@ -330,12 +330,17 @@ body.dark .empty-title{color:#e4e6eb}
         <div class="sync-dot" id="sync-dot"></div>
         <span id="sync-txt">Aguardando...</span>
       </div>
-      <div class="sync-info" id="disk-info" style="display:none;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span>💾</span>
-          <span id="disk-txt" style="font-size:10px"></span>
+      <div id="disk-info" style="display:none;flex-direction:column;gap:4px;padding:6px 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:11px">💾</span>
+            <span id="disk-txt" style="font-size:10px;color:#9ca3af"></span>
+          </div>
+          <button onclick="cleanupMedia()" title="Liberar espaço" style="border:none;background:rgba(255,255,255,.08);color:#9ca3af;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer">Limpar</button>
         </div>
-        <button onclick="cleanupMedia()" title="Liberar espaço (apaga imagens/vídeos em cache)" style="border:none;background:rgba(255,255,255,.08);color:#9ca3af;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;white-space:nowrap">Limpar</button>
+        <div style="height:4px;background:#2d2e30;border-radius:2px;overflow:hidden">
+          <div id="disk-bar" style="height:100%;border-radius:2px;transition:width .4s,background .4s;width:0%"></div>
+        </div>
       </div>
     </div>
   </aside>
@@ -550,12 +555,19 @@ async function checkDisk() {
     const data = await r.json();
     if (data.disk) {
       const mb = parseFloat(data.disk.totalMB);
+      const MAX_MB = 480; // Railway free tier ~500MB
+      const pct = Math.min(100, (mb / MAX_MB) * 100).toFixed(1);
+      const color = mb > 380 ? '#ef4444' : mb > 220 ? '#f59e0b' : '#22c55e';
       const el = document.getElementById('disk-info');
       const txt = document.getElementById('disk-txt');
-      txt.textContent = `${data.disk.totalMB} MB usados`;
-      txt.style.color = mb > 400 ? '#ef4444' : mb > 250 ? '#f59e0b' : '#9ca3af';
+      const bar = document.getElementById('disk-bar');
+      txt.textContent = `${data.disk.totalMB} MB / 480 MB`;
+      txt.style.color = color;
+      bar.style.width = pct + '%';
+      bar.style.background = color;
       el.style.display = 'flex';
-      if (mb > 400) toast(`⚠️ Disco quase cheio: ${data.disk.totalMB} MB`, 5000);
+      if (mb > 420) toast(`🔴 Disco quase cheio: ${data.disk.totalMB} MB — clique em Limpar!`, 6000);
+      else if (mb > 220) toast(`🟡 Disco passando da metade: ${data.disk.totalMB} MB`, 4000);
     }
   } catch {}
 }
