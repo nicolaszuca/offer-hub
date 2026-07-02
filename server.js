@@ -15,6 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PASSWORD = process.env.HUB_PASSWORD || '';
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
+const FB_APP_ID = process.env.FB_APP_ID || '';
+const FB_APP_SECRET = process.env.FB_APP_SECRET || '';
 
 // ─── DATABASE ─────────────────────────────────────────────────────────────────
 const db = new Database(process.env.DB_PATH || 'hub.db');
@@ -637,6 +639,91 @@ app.post('/api/domaincheck', auth, (req, res) => {
     console.error('[domaincheck] Erro:', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
+});
+
+
+// ─── FACEBOOK AD LIBRARY API ─────────────────────────────────────────────────
+async function fetchFbAdCount(domain) {
+  const token = `${FB_APP_ID}|${FB_APP_SECRET}`;
+  const params = new URLSearchParams({
+    access_token: token,
+    search_terms: domain,
+    ad_active_status: 'ACTIVE',
+    ad_reached_countries: '["ALL"]',
+    fields: 'id',
+    limit: '500',
+  });
+  let url = `https://graph.facebook.com/v19.0/ads_archive?${params}`;
+  let count = 0;
+  let pages = 0;
+  while (url && pages < 10) {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.error) {
+      console.error(`[fb] API error for ${domain}:`, JSON.stringify(json.error));
+      return -1;
+    }
+    count += (json.data || []).length;
+    url = json.paging?.next || null;
+    pages++;
+  }
+  return count;
+}
+
+// POST /api/checkdomains — check server-side via Facebook Graph API
+app.post('/api/checkdomains', auth, async (req, res) => {
+  if (!FB_APP_ID || !FB_APP_SECRET) {
+    return res.status(400).json({ ok: false, error: 'FB_APP_ID e FB_APP_SECRET nao configurados. Adicione nas variaveis de ambiente do Railway.' });
+  }
+
+  const allRows = [
+    ...db.prepare('SELECT data FROM queue').all(),
+    ...db.prepare('SELECT data FROM saved').all(),
+  ];
+  const domainSet = new Set();
+  for (const row of allRows) {
+    try {
+      const ad = JSON.parse(row.data);
+      const d = (ad.linkDomain || '').toLowerCase().trim();
+      if (d && !d.includes('facebook') && !d.includes('instagram') && d.length > 3) {
+        domainSet.add(d);
+      }
+    } catch (_) {}
+  }
+  const domains = Array.from(domainSet);
+
+  if (!domains.length) {
+    return res.json({ ok: true, checked: 0, message: 'Nenhum dominio encontrado.' });
+  }
+
+  db.prepare("UPDATE domain_check_state SET status = 'running', requested_at = strftime('%s','now'), finished_at = NULL WHERE id = 1").run();
+  res.json({ ok: true, checking: domains.length });
+
+  (async () => {
+    let ok = 0;
+    for (const domain of domains) {
+      try {
+        const count = await fetchFbAdCount(domain);
+        if (count >= 0) {
+          db.prepare(`
+            INSERT INTO domain_stats (domain, active_count, checked_at)
+            VALUES (?, ?, strftime('%s','now'))
+            ON CONFLICT(domain) DO UPDATE SET active_count = excluded.active_count, checked_at = excluded.checked_at
+          `).run(domain, count);
+          console.log(`[fb] ${domain}: ${count} ads ativos`);
+          ok++;
+        }
+      } catch (e) {
+        console.warn(`[fb] Erro ao checar ${domain}:`, e.message);
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+    db.prepare("UPDATE domain_check_state SET status = 'done', finished_at = strftime('%s','now') WHERE id = 1").run();
+    console.log(`[fb] Check concluido: ${ok}/${domains.length} dominios atualizados`);
+  })().catch(e => {
+    console.error('[fb] Erro inesperado:', e.message);
+    db.prepare("UPDATE domain_check_state SET status = 'idle' WHERE id = 1").run();
+  });
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────

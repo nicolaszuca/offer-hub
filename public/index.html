@@ -1059,14 +1059,18 @@ function stopCheckPoll() {
 
 async function requestDomainCheck() {
   try {
-    await fetch('/api/domaincheck', {
+    const r = await fetch('/api/checkdomains', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${S.token}` },
-      body: JSON.stringify({ action: 'request' }),
     });
-    updateCheckStatusUI('pending');
+    const data = await r.json();
+    if (!data.ok) {
+      toast('Erro: ' + (data.error || 'Falha no check'), 5000);
+      return;
+    }
+    updateCheckStatusUI('running');
     startCheckPoll();
-    toast('🔍 Verificação solicitada — a extensão abrirá cada domínio na Ad Library', 5000);
+    toast('🔍 Verificando ' + (data.checking || 0) + ' domínios via API do Facebook...', 5000);
   } catch (e) {
     toast('Erro ao solicitar verificação: ' + e.message, 4000);
   }
