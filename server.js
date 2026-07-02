@@ -732,3 +732,4 @@ app.listen(PORT, () => {
   // Baixa pageLogos em background após inicializar
   setTimeout(() => migratePageLogos().catch(console.error), 3000);
 });
+
