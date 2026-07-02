@@ -15,8 +15,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PASSWORD = process.env.HUB_PASSWORD || '';
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
-const FB_APP_ID = process.env.FB_APP_ID || '';
-const FB_APP_SECRET = process.env.FB_APP_SECRET || '';
+const FB_USER_TOKEN = process.env.FB_USER_TOKEN || '';
+// Países para busca na Ad Library — ["ALL"] não funciona na API
+const FB_AD_COUNTRIES = '["US","CA","AU","GB","NZ","IN","ZA","SG","BR","MX","DE","FR","IT","ES","AR","CL","CO","PE","PH","TH","MY","ID","NG","KE","GH","EG","AE","SA"]';
 
 // ─── DATABASE ─────────────────────────────────────────────────────────────────
 const db = new Database(process.env.DB_PATH || 'hub.db');
@@ -643,13 +644,15 @@ app.post('/api/domaincheck', auth, (req, res) => {
 
 
 // ─── FACEBOOK AD LIBRARY API ─────────────────────────────────────────────────
+// Busca ads via search_terms=domain (encontra ads que mencionam o domínio no texto)
+// Usa ad_active_status=ALL para capturar ads históricos e ativos
+// Nota: não usa App Token (sem permissão) — requer FB_USER_TOKEN (user token com ads_read)
 async function fetchFbAdCount(domain) {
-  const token = `${FB_APP_ID}|${FB_APP_SECRET}`;
   const params = new URLSearchParams({
-    access_token: token,
+    access_token: FB_USER_TOKEN,
     search_terms: domain,
-    ad_active_status: 'ACTIVE',
-    ad_reached_countries: '["ALL"]',
+    ad_active_status: 'ALL',
+    ad_reached_countries: FB_AD_COUNTRIES,
     fields: 'id',
     limit: '500',
   });
@@ -672,8 +675,8 @@ async function fetchFbAdCount(domain) {
 
 // POST /api/checkdomains — check server-side via Facebook Graph API
 app.post('/api/checkdomains', auth, async (req, res) => {
-  if (!FB_APP_ID || !FB_APP_SECRET) {
-    return res.status(400).json({ ok: false, error: 'FB_APP_ID e FB_APP_SECRET nao configurados. Adicione nas variaveis de ambiente do Railway.' });
+  if (!FB_USER_TOKEN) {
+    return res.status(400).json({ ok: false, error: 'FB_USER_TOKEN nao configurado. Adicione o User Access Token (ads_read) nas variaveis de ambiente do Railway.' });
   }
 
   const allRows = [
@@ -726,10 +729,4 @@ app.post('/api/checkdomains', auth, async (req, res) => {
   });
 });
 
-// ─── START ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Offer Hub rodando na porta ${PORT}`);
-  // Baixa pageLogos em background após inicializar
-  setTimeout(() => migratePageLogos().catch(console.error), 3000);
-});
-
+// ─── START �
