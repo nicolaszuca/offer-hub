@@ -1,5 +1,12 @@
+// Debug startup crash
+process.on('uncaughtException', (err) => { console.error('[FATAL] uncaughtException:', err.message, err.stack); process.exit(1); });
+process.on('unhandledRejection', (err) => { console.error('[FATAL] unhandledRejection:', err); process.exit(1); });
+console.log('[startup] Node iniciando...');
+
 const express = require('express');
+console.log('[startup] express ok');
 const Database = require('better-sqlite3');
+console.log('[startup] sqlite ok');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
@@ -721,12 +728,4 @@ app.post('/api/checkdomains', auth, async (req, res) => {
       }
       await new Promise(r => setTimeout(r, 300));
     }
-    db.prepare("UPDATE domain_check_state SET status = 'done', finished_at = strftime('%s','now') WHERE id = 1").run();
-    console.log(`[fb] Check concluido: ${ok}/${domains.length} dominios atualizados`);
-  })().catch(e => {
-    console.error('[fb] Erro inesperado:', e.message);
-    db.prepare("UPDATE domain_check_state SET status = 'idle' WHERE id = 1").run();
-  });
-});
-
-// ─── START �
+    db.
