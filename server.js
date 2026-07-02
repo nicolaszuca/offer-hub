@@ -75,6 +75,18 @@ db.exec(`
     analysis TEXT,
     saved_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
+  CREATE TABLE IF NOT EXISTS domain_stats (
+    domain TEXT PRIMARY KEY,
+    active_count INTEGER DEFAULT 0,
+    checked_at INTEGER DEFAULT (strftime('%s', 'now'))
+  );
+  CREATE TABLE IF NOT EXISTS domain_check_state (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT DEFAULT 'idle',
+    requested_at INTEGER,
+    finished_at INTEGER
+  );
+  INSERT OR IGNORE INTO domain_check_state (id, status) VALUES (1, 'idle');
 `);
 
 // Executa migrações após as tabelas existirem
@@ -556,6 +568,74 @@ app.get('/api/health', (req, res) => {
     });
   } catch (e) {
     res.json({ ok: true, version: '1.2.0', error: e.message });
+  }
+});
+
+// ─── DOMAIN STATS ─────────────────────────────────────────────────────────────
+// Recebe contagem de ads ativos de um domínio (enviado pela extensão)
+app.post('/api/domainstat', auth, (req, res) => {
+  const { domain, activeCount } = req.body || {};
+  if (!domain) return res.status(400).json({ ok: false, error: 'domain obrigatório' });
+  try {
+    db.prepare(`
+      INSERT INTO domain_stats (domain, active_count, checked_at)
+      VALUES (?, ?, strftime('%s','now'))
+      ON CONFLICT(domain) DO UPDATE SET active_count = excluded.active_count, checked_at = excluded.checked_at
+    `).run(domain.toLowerCase().trim(), Number(activeCount) || 0);
+    console.log(`[domainstat] ${domain}: ${activeCount} ads ativos`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[domainstat] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Retorna todas as estatísticas de domínios
+app.get('/api/domainstat', auth, (req, res) => {
+  try {
+    const rows = db.prepare(
+      'SELECT domain, active_count, checked_at FROM domain_stats ORDER BY active_count DESC'
+    ).all();
+    res.json(rows);
+  } catch (e) {
+    res.json([]);
+  }
+});
+
+// ─── DOMAIN CHECK STATE ───────────────────────────────────────────────────────
+// GET: retorna status atual (idle | pending | running | done)
+app.get('/api/domaincheck', auth, (req, res) => {
+  try {
+    const row = db.prepare(
+      'SELECT status, requested_at, finished_at FROM domain_check_state WHERE id = 1'
+    ).get();
+    res.json(row || { status: 'idle' });
+  } catch (e) {
+    res.json({ status: 'idle', error: e.message });
+  }
+});
+
+// POST: atualiza status { action: 'request' | 'start' | 'done' | 'reset' }
+app.post('/api/domaincheck', auth, (req, res) => {
+  const { action } = req.body || {};
+  try {
+    if (action === 'request') {
+      db.prepare(
+        "UPDATE domain_check_state SET status = 'pending', requested_at = strftime('%s','now'), finished_at = NULL WHERE id = 1"
+      ).run();
+    } else if (action === 'start') {
+      db.prepare("UPDATE domain_check_state SET status = 'running' WHERE id = 1").run();
+    } else if (action === 'done') {
+      db.prepare(
+        "UPDATE domain_check_state SET status = 'done', finished_at = strftime('%s','now') WHERE id = 1"
+      ).run();
+    } else if (action === 'reset') {
+      db.prepare("UPDATE domain_check_state SET status = 'idle' WHERE id = 1").run();
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[domaincheck] Erro:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 

@@ -223,6 +223,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .d-ctab.active{background:var(--primary);color:#fff}
 .d-chart-body{padding:12px 16px 16px}
 .d-ads-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.d-actions-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0}
+.d-check-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s}
+.d-check-btn:hover:not(:disabled){background:var(--primary-hover)}
+.d-check-btn:disabled{opacity:.5;cursor:not-allowed}
+.d-check-status{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px}
+.d-active-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;white-space:nowrap}
+.d-active-badge.has-count{background:#dcfce7;color:#16a34a}
+.d-active-badge.zero{background:#f0f2f5;color:var(--text2)}
+.d-active-badge.unchecked{background:#fef9c3;color:#a16207}
 .d-ads-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
 /* dark */
 body.dark .d-stat-card{background:var(--card);border-color:var(--border)}
@@ -442,6 +451,11 @@ body.dark .empty-title{color:#e4e6eb}
 
     <!-- DOMÍNIOS VIEW -->
     <div class="domains-view" id="view-domains">
+      <!-- Barra de ações -->
+      <div class="d-actions-bar">
+        <div id="domain-check-status" class="d-check-status" style="display:none"></div>
+        <button onclick="requestDomainCheck()" id="btn-check-domains" class="d-check-btn">🔍 Checar todos</button>
+      </div>
       <!-- 3 cards de resumo -->
       <div class="d-summary" id="domain-summary"></div>
       <!-- corpo: tabela + gráfico + ads -->
@@ -675,7 +689,7 @@ function switchTab(tab) {
   document.querySelector('.search-wrap').style.visibility = isDomains ? 'hidden' : '';
   document.querySelector('.topbar-right').style.visibility = isDomains ? 'hidden' : '';
   if (isDomains) renderDomains();
-  else renderGrid();
+  else { stopCheckPoll(); renderGrid(); }
 }
 
 function onSearch(v) { S.search = v.toLowerCase(); S.page = 1; renderGrid(); }
@@ -986,6 +1000,77 @@ if (localStorage.getItem('hub_dark')) document.body.classList.add('dark');
 let domainChart = null;
 let selectedDomain = null;
 let chartDays = 7;
+let domainStats = {};        // domain → activeCount (dados do servidor)
+let checkPollTimer = null;   // intervalo de polling do status do check
+
+async function loadDomainStats() {
+  try {
+    const r = await fetch('/api/domainstat', { headers: { 'Authorization': `Bearer ${S.token}` } });
+    if (!r.ok) return;
+    const rows = await r.json();
+    domainStats = {};
+    for (const row of rows) domainStats[(row.domain || '').toLowerCase()] = row.active_count;
+  } catch (_) {}
+}
+
+async function loadCheckStatus() {
+  try {
+    const r = await fetch('/api/domaincheck', { headers: { 'Authorization': `Bearer ${S.token}` } });
+    const data = await r.json();
+    const status = data.status || 'idle';
+    updateCheckStatusUI(status);
+    // Quando o check termina, recarrega stats e atualiza a tabela
+    if (status === 'done') {
+      await loadDomainStats();
+      const map = getDomainMap();
+      const domData = Object.values(map).sort((a, b) => b.ads.length - a.ads.length);
+      if (domData.length) renderDomainTable(domData, map);
+      stopCheckPoll();
+    }
+  } catch (_) {}
+}
+
+function updateCheckStatusUI(status) {
+  const el = document.getElementById('domain-check-status');
+  const btn = document.getElementById('btn-check-domains');
+  if (!el || !btn) return;
+  if (status === 'pending') {
+    el.style.display = 'flex';
+    el.innerHTML = '<span style="animation:pulse 1s infinite;display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;margin-right:4px"></span> Aguardando extensão…';
+    btn.disabled = true;
+  } else if (status === 'running') {
+    el.style.display = 'flex';
+    el.innerHTML = '<span style="animation:pulse 1s infinite;display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:4px"></span> Verificando Ad Library…';
+    btn.disabled = true;
+  } else {
+    el.style.display = 'none';
+    btn.disabled = false;
+  }
+}
+
+function startCheckPoll() {
+  if (checkPollTimer) return;
+  checkPollTimer = setInterval(loadCheckStatus, 5000);
+}
+
+function stopCheckPoll() {
+  if (checkPollTimer) { clearInterval(checkPollTimer); checkPollTimer = null; }
+}
+
+async function requestDomainCheck() {
+  try {
+    await fetch('/api/domaincheck', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${S.token}` },
+      body: JSON.stringify({ action: 'request' }),
+    });
+    updateCheckStatusUI('pending');
+    startCheckPoll();
+    toast('🔍 Verificação solicitada — a extensão abrirá cada domínio na Ad Library', 5000);
+  } catch (e) {
+    toast('Erro ao solicitar verificação: ' + e.message, 4000);
+  }
+}
 
 function getAdDay(ad) {
   if (ad.createdAt && /^\d{4}-\d{2}-\d{2}/.test(ad.createdAt)) return ad.createdAt.substring(0, 10);
@@ -1020,7 +1105,6 @@ function getDomainMap() {
     }
     if (!domain) return;
     if (!map[domain]) map[domain] = { domain, ads: [], byDay: {} };
-    // Evita duplicatas (mesmo ad em queue e saved)
     if (!map[domain].ads.find(a => a.id === ad.id)) map[domain].ads.push(ad);
     const day = getAdDay(ad);
     map[domain].byDay[day] = (map[domain].byDay[day] || 0) + 1;
@@ -1036,6 +1120,16 @@ function getDomainColor(domain) {
 }
 
 function renderDomains() {
+  loadDomainStats().then(() => {
+    const map = getDomainMap();
+    const domData = Object.values(map).sort((a,b) => b.ads.length - a.ads.length);
+    if (domData.length) renderDomainTable(domData, map);
+  });
+  fetch('/api/domaincheck', { headers: { 'Authorization': `Bearer ${S.token}` } })
+    .then(r => r.json())
+    .then(d => { updateCheckStatusUI(d.status || 'idle'); if (d.status === 'pending' || d.status === 'running') startCheckPoll(); })
+    .catch(() => {});
+
   const map = getDomainMap();
   const data = Object.values(map).sort((a, b) => b.ads.length - a.ads.length);
   if (!data.length) {
@@ -1098,6 +1192,10 @@ function renderDomainTable(data, map) {
     const trend = recent2 > older5 * 0.7 ? 'up' : recent2 === 0 && older5 > 0 ? 'down' : 'flat';
     const trendLabel = trend==='up' ? '↑ Subindo' : trend==='down' ? '↓ Caindo' : '→ Estável';
     const isSel = d.domain === selectedDomain;
+    const key = d.domain.toLowerCase();
+    const activeBadge = domainStats[key] !== undefined
+      ? `<div class="d-active-badge ${domainStats[key]>0?'has-count':'zero'}">${domainStats[key]} ativo${domainStats[key]!==1?'s':''}</div>`
+      : '<div class="d-active-badge unchecked">? ativos</div>';
     return `<div class="d-row${isSel?' sel':''}" onclick="selectDomain('${e(d.domain)}')">
       <div class="d-rank">${i+1}</div>
       <div class="d-favicon" style="background:${color}">${letter}</div>
@@ -1108,6 +1206,7 @@ function renderDomainTable(data, map) {
       <div class="d-count">
         <div class="d-count-num">${d.ads.length}</div>
         <div class="d-count-lbl">ads</div>
+        ${activeBadge}
         <div class="d-trend ${trend}">${trendLabel}</div>
       </div>
     </div>`;
@@ -1165,7 +1264,6 @@ function renderDomainDetail(d) {
     }
   });
 
-  // Ads vinculados ao domínio
   const section = document.getElementById('domain-ads-section');
   const grid = document.getElementById('domain-ads-grid');
   if (!d.ads.length) { section.style.display = 'none'; return; }
@@ -1181,7 +1279,6 @@ function selectDomain(domain) {
   const data = Object.values(map).sort((a,b) => b.ads.length - a.ads.length);
   renderDomainTable(data, map);
   renderDomainDetail(map[domain]);
-  // Scroll para o gráfico
   document.getElementById('domain-chart-card').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
@@ -1195,7 +1292,7 @@ function setChartDays(n) {
   }
 }
 
-// ── INIT ─────────────────────────────────────────────────
+// ── INIT ────────────────────────────────────────────────────────────
 checkAuth();
 updateDarkBtn();
 </script>
