@@ -187,22 +187,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .d-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);font-weight:700;margin-bottom:8px}
 .d-stat-num{font-size:26px;font-weight:800;color:var(--text);line-height:1.1;word-break:break-all}
 .d-stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
-.d-body{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.d-body{display:grid;grid-template-columns:420px 1fr;gap:16px;align-items:start}
 .d-table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .d-table-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text);display:flex;justify-content:space-between}
 .d-table-head span{font-weight:400;color:var(--text2)}
-.d-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .12s}
+.d-row{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .12s}
 .d-row:last-child{border-bottom:none}
 .d-row:hover{background:#f7f8fa}
 .d-row.sel{background:#eef0ff}
 .d-rank{font-size:11px;font-weight:700;color:var(--text2);width:16px;flex-shrink:0}
-.d-favicon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;flex-shrink:0}
+.d-favicon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800;flex-shrink:0}
 .d-info{flex:1;min-width:0}
-.d-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.d-spark{display:flex;align-items:flex-end;gap:2px;height:18px;margin-top:3px}
-.d-spark-bar{width:5px;border-radius:1px 1px 0 0;min-height:2px}
+.d-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d-spark{display:flex;align-items:flex-end;gap:2px;height:22px;margin-top:4px}
+.d-spark-bar{width:6px;border-radius:2px 2px 0 0;min-height:2px}
 .d-count{text-align:right;flex-shrink:0}
-.d-count-num{font-size:17px;font-weight:800;color:var(--primary);line-height:1}
+.d-count-num{font-size:19px;font-weight:800;color:var(--primary);line-height:1}
 .d-count-lbl{font-size:10px;color:var(--text2)}
 .d-trend{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px}
 .d-trend.up{background:#dcfce7;color:#16a34a}
@@ -228,7 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .d-check-btn:hover:not(:disabled){background:var(--primary-hover)}
 .d-check-btn:disabled{opacity:.5;cursor:not-allowed}
 .d-check-status{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px}
-.d-active-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;white-space:nowrap}
+.d-active-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px;white-space:nowrap}
 .d-active-badge.has-count{background:#dcfce7;color:#16a34a}
 .d-active-badge.zero{background:#f0f2f5;color:var(--text2)}
 .d-active-badge.unchecked{background:#fef9c3;color:#a16207}
@@ -1023,7 +1023,7 @@ async function loadCheckStatus() {
     if (status === 'done') {
       await loadDomainStats();
       const map = getDomainMap();
-      const domData = Object.values(map).sort((a, b) => b.ads.length - a.ads.length);
+      const domData = Object.values(map).sort((a,b) => { const ka = domainStats[a.domain.toLowerCase()] ?? -1; const kb = domainStats[b.domain.toLowerCase()] ?? -1; return kb !== ka ? kb - ka : b.ads.length - a.ads.length; });
       if (domData.length) renderDomainTable(domData, map);
       stopCheckPoll();
     }
@@ -1126,7 +1126,7 @@ function getDomainColor(domain) {
 function renderDomains() {
   loadDomainStats().then(() => {
     const map = getDomainMap();
-    const domData = Object.values(map).sort((a,b) => b.ads.length - a.ads.length);
+    const domData = Object.values(map).sort((a,b) => { const ka = domainStats[a.domain.toLowerCase()] ?? -1; const kb = domainStats[b.domain.toLowerCase()] ?? -1; return kb !== ka ? kb - ka : b.ads.length - a.ads.length; });
     if (domData.length) renderDomainTable(domData, map);
   });
   fetch('/api/domaincheck', { headers: { 'Authorization': `Bearer ${S.token}` } })
@@ -1135,7 +1135,7 @@ function renderDomains() {
     .catch(() => {});
 
   const map = getDomainMap();
-  const data = Object.values(map).sort((a, b) => b.ads.length - a.ads.length);
+  const data = Object.values(map).sort((a,b) => { const ka = domainStats[a.domain.toLowerCase()] ?? -1; const kb = domainStats[b.domain.toLowerCase()] ?? -1; return kb !== ka ? kb - ka : b.ads.length - a.ads.length; });
   if (!data.length) {
     document.getElementById('domain-summary').innerHTML = `<div class="d-stat-card" style="grid-column:1/-1;text-align:center;padding:40px">
       <div style="font-size:36px;opacity:.3;margin-bottom:12px">🌐</div>
@@ -1188,7 +1188,7 @@ function renderDomainTable(data, map) {
     const maxDay = Math.max(...days7.map(day => d.byDay[day] || 0), 1);
     const sparkBars = days7.map(day => {
       const cnt = d.byDay[day] || 0;
-      const h = Math.max(2, Math.round((cnt / maxDay) * 16));
+      const h = Math.max(2, Math.round((cnt / maxDay) * 20));
       return `<div class="d-spark-bar" style="height:${h}px;background:${color};opacity:${day===today?1:0.45}"></div>`;
     }).join('');
     const recent2 = (d.byDay[today]||0) + (d.byDay[yesterday]||0);
@@ -1243,16 +1243,21 @@ function renderDomainDetail(d) {
   if (domainChart) { domainChart.destroy(); domainChart = null; }
   const ctx = document.getElementById('domain-chart').getContext('2d');
   domainChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels,
       datasets: [{
         label: 'Ads',
         data: counts,
-        backgroundColor: color + '66',
+        backgroundColor: color + '22',
         borderColor: color,
-        borderWidth: 2,
-        borderRadius: 6,
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.4,
+        fill: true,
       }]
     },
     options: {
@@ -1280,7 +1285,7 @@ function renderDomainDetail(d) {
 function selectDomain(domain) {
   selectedDomain = domain;
   const map = getDomainMap();
-  const data = Object.values(map).sort((a,b) => b.ads.length - a.ads.length);
+  const data = Object.values(map).sort((a,b) => { const ka = domainStats[a.domain.toLowerCase()] ?? -1; const kb = domainStats[b.domain.toLowerCase()] ?? -1; return kb !== ka ? kb - ka : b.ads.length - a.ads.length; });
   renderDomainTable(data, map);
   renderDomainDetail(map[domain]);
   document.getElementById('domain-chart-card').scrollIntoView({behavior:'smooth', block:'nearest'});
